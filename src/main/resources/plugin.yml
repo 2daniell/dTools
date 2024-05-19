@@ -1,0 +1,6 @@
+name: IndoTools
+version: 1.0
+main: com.daniel.indotools.Main
+author: Daniel
+commands:
+  teste:
