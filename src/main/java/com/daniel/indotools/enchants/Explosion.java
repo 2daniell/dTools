@@ -1,6 +1,10 @@
 package com.daniel.indotools.enchants;
 
+import com.daniel.indotools.Main;
+import com.daniel.indotools.handler.Manager;
+import com.daniel.indotools.handler.PickaxeHandler;
 import com.daniel.indotools.model.CustomEnchant;
+import com.daniel.indotools.model.Pickaxe;
 import de.tr7zw.changeme.nbtapi.NBTItem;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -14,30 +18,39 @@ import org.bukkit.event.block.BlockExpEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Random;
+import java.util.UUID;
 
 public class Explosion extends CustomEnchant {
 
-    private static final int MAX_CHANCE = 5;
+    private static final int MAX_CHANCE = Main.config().getInt("enchants.explosion.max-chance");
+    private final PickaxeHandler handler;
+    private final int chance;
 
-    private int chance;
-
-    public Explosion() {
+    public Explosion(PickaxeHandler handler) {
         super("Explosão" , 1235, 1, 1);
+        this.handler = handler;
         this.chance = new Random().nextInt(MAX_CHANCE) + 1;
         add(BlockBreakEvent.class, this::onBreak);
     }
 
     public void onBreak(BlockBreakEvent e, int level) {
-        if (e.getPlayer().getItemInHand().getEnchantments().containsKey(this)) {
+
+        ItemStack inHand = e.getPlayer().getItemInHand();
+
+        int blocksBroken = 1;
+        Player player = e.getPlayer();
+
+        Block originalBlock = e.getBlock();
+
+        if (inHand.getEnchantments().containsKey(this)) {
 
             int randomChance = new Random().nextInt(100) + 1;
-            if (randomChance <= 100) {
+            if (randomChance <= chance) {
 
-                Block originalBlock = e.getBlock();
-                Player player = e.getPlayer();
+
+
                 Material originalType = originalBlock.getType();
 
-                int blocksBroken = 1;
                 for (int x = -1; x <= 1; x++) {
                     for (int y = -1; y <= 1; y++ ){
                         for (int z = -1; z <= 1; z++) {
@@ -55,17 +68,32 @@ public class Explosion extends CustomEnchant {
                     }
                 }
                 player.playSound(player.getLocation(), Sound.EXPLODE, 2f, 2f);
+            }
 
-                ItemStack inHand = e.getPlayer().getItemInHand();
+            NBTItem nbtItem = new NBTItem(inHand);
 
-                if (inHand == null) return;
+            if(!nbtItem.hasTag("custompickaxeid")) return;
 
-                short durabilityLoss = (short) (blocksBroken * 3);
+            UUID id = UUID.fromString(nbtItem.getString("custompickaxeid"));
+
+            Pickaxe pickaxe = handler.findPickaxeById(id);
+
+            if (pickaxe == null) return;
+
+            int xpToAdd = Manager.getXpBlock(originalBlock);
+
+            pickaxe.addXp(xpToAdd);
+            pickaxe.updateLore(inHand);
+
+            if (Main.config().getBoolean("enchants.explosion.remove-durability")) {
+
+                short durabilityLoss = (short) blocksBroken;
 
                 if (inHand.getDurability() + durabilityLoss >= inHand.getType().getMaxDurability()) {
-                    player.getInventory().setItemInHand(new ItemStack(Material.AIR));
+                    player.getInventory().setItemInHand(null);
+                    player.playSound(player.getLocation(), Sound.ITEM_BREAK, 1f, 1f);
                 } else {
-                    inHand.setDurability((short) (inHand.getDurability() - durabilityLoss));
+                    inHand.setDurability((short) (inHand.getDurability() + durabilityLoss));
                 }
             }
         }

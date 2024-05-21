@@ -1,5 +1,6 @@
 package com.daniel.indotools.model;
 
+import com.daniel.indotools.handler.Manager;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -28,6 +29,7 @@ public abstract class CustomEnchant extends Enchantment implements Listener {
 
     @EventHandler
     public void onEvent(BlockExpEvent e) {
+        if (!Manager.isWorld(e.getBlock().getLocation().getWorld().getName())) return;
         if (eventHandles.containsKey(e.getClass())) {
             int level = getEnchantmentLevel(e);
             eventHandles.get(e.getClass()).accept(e, level);

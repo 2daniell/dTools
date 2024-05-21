@@ -1,19 +1,23 @@
 package com.daniel.indotools.model;
 
+import com.daniel.indotools.Main;
 import com.daniel.indotools.api.ItemBuilder;
 import com.daniel.indotools.utils.Utils;
 import de.tr7zw.changeme.nbtapi.NBTItem;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.enchantments.EnchantmentTarget;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
+import java.io.Serializable;
 import java.util.*;
 
 @Getter
-public class Pickaxe {
+public class Pickaxe implements Serializable {
 
     @Getter
     @AllArgsConstructor
@@ -40,58 +44,86 @@ public class Pickaxe {
             return PickaxeType.WOOD.material;
         }
 
+        public static PickaxeType getByLevel(int level) {
+            for (PickaxeType pickaxeType : values()) {
+                if (level >= pickaxeType.minLevel && level <= pickaxeType.maxLevel) {
+                    return pickaxeType;
+                }
+            }
+            return PickaxeType.WOOD;
+        }
+
     }
 
     private static final int MAX_LEVEL = 100;
+    private static final int LEVEL = Main.config().getInt("config.level-xp");
+
+    private UUID owner;
 
     private final UUID id;
     private PickaxeType type;
     protected int level;
     private int xp;
-    private final Set<Enchantment> enchantments;
 
-    public Pickaxe() {
+    @Setter
+    private Set<Enchantment> enchantments;
+
+    public Pickaxe(UUID owner, UUID id, int level, int xp) {
+        this.owner = owner;
+        this.id = id;
+        this.type = PickaxeType.getByLevel(level);
+        this.level = level;
+        this.xp = xp;
+    }
+
+    public Pickaxe(UUID owner) {
+        this.owner = owner;
         this.id = UUID.randomUUID();
-        this.level = 1;
-        this.xp = 100;
-        this.type = PickaxeType.WOOD;
+        this.level = 99;
+        this.xp = 0;
+        this.type = PickaxeType.DIAMOND;
         this.enchantments = new HashSet<>();
     }
 
     public ItemStack getItem() {
-        ItemStack itemStack = new ItemStack(getMaterial());
+        ItemStack itemStack = new ItemBuilder(getMaterial()).setDisplayName(type.getDisplayName() + " " + Utils.getLevelColor(level)).build();
+
+        updateLore(itemStack);
+
         NBTItem nbtItem = new NBTItem(itemStack);
 
         nbtItem.setString("custompickaxeid", id.toString());
+        nbtItem.setInteger("custompickaxexp", 0);
+        nbtItem.setInteger("custompickaxelevel", 1);
+        nbtItem.applyNBT(itemStack);
 
-        ItemBuilder builder = new ItemBuilder(nbtItem.getItem()).setDisplayName(type.getDisplayName() + " " + Utils.getLevelColor(level));
-
-        List<String> lore = new ArrayList<>();
-
-        lore.add(0, " ");
-        lore.add("§7Level §e" + level);
-        lore.add("§7XP §e" + xp + "§f/§e" + getXpNextLevel());
-        lore.add("§8[" + getBars() + "§8]");
-        lore.add(" ");
-
-        for (Enchantment enchant : enchantments) {
-            if (enchant instanceof CustomEnchant) {
-                CustomEnchant customEnchant = (CustomEnchant) enchant;
-                builder.addEnchant(customEnchant, 1);
-                lore.add(customEnchant.lore());
-            }
-        }
-
-        return builder.setLore(lore).build();
+        return itemStack;
     }
 
     public void addRandomVanilla() {
 
     }
 
-    public int getXpNextLevel() { //XP ATUAL + 500 = Proximo
+    public boolean addXp(int xpToAdd) {
+        if (level >= MAX_LEVEL) {
+            return false;
+        }
+
+        this.xp += xpToAdd;
+
+        if (xp >= getXpNextLevel()) {
+            level++;
+            xp = 0;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public int getXpNextLevel() {
         if (level >= MAX_LEVEL) return 0;
-        return xp + 500;
+        return level * LEVEL;
     }
 
     private String getBars() {
@@ -122,5 +154,37 @@ public class Pickaxe {
             }
         }
         return enchantments;
+    }
+
+    public void updateLore(ItemStack itemStack) {
+        ItemMeta builder = itemStack.getItemMeta();
+        if (builder.hasLore()) builder.getLore().clear();
+
+        List<String> lore = new ArrayList<>();
+
+        lore.add(0, " ");
+        lore.add("§7Level §e" + level);
+        lore.add("§7XP §e" + xp + "§f/§e" + getXpNextLevel());
+        lore.add("§8[" + getBars() + "§8]");
+        lore.add(" ");
+
+        for (Enchantment enchant : enchantments) {
+            if (enchant instanceof CustomEnchant) {
+                CustomEnchant customEnchant = (CustomEnchant) enchant;
+                builder.addEnchant(customEnchant, 1, true);
+                lore.add(customEnchant.lore());
+            }
+        }
+
+        builder.setLore(lore);
+        itemStack.setItemMeta(builder);
+        updateNBT(itemStack);
+    }
+
+    private void updateNBT(ItemStack itemStack) {
+        NBTItem nbtItem = new NBTItem(itemStack);
+        nbtItem.setInteger("custompickaxexp", xp);
+        nbtItem.setInteger("custompickaxelevel", level);
+        nbtItem.applyNBT(itemStack);
     }
 }

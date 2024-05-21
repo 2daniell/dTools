@@ -1,29 +1,43 @@
 package com.daniel.indotools.handler;
 
 import com.daniel.indotools.Main;
+import com.daniel.indotools.enchants.DoubleXP;
 import com.daniel.indotools.enchants.Explosion;
+import com.daniel.indotools.enchants.Treasure;
 import com.daniel.indotools.model.CustomEnchant;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
 
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-public class EnchantmentHandler {
+public class Manager {
 
+    private static final PickaxeHandler handler = new PickaxeHandler();
     private static final Set<CustomEnchant> enchants = new HashSet<>();
+    private static final Set<String> worldsMina = new HashSet<>();
+    private static final Map<Material, Integer> blocks = new HashMap<>();
 
     static {
-        enchants.add(new Explosion());
-    }
-
-    public static CustomEnchant findByName(String name) {
-        return search(e -> e.getName().equalsIgnoreCase(name)).findFirst().orElse(null);
+        enchants.add(new Explosion(handler));
+        enchants.add(new Treasure());
+        enchants.add(new DoubleXP());
+        loadMinas();
+        loadBlocks();
     }
 
     private static Stream<CustomEnchant> search(Predicate<CustomEnchant> predicate) {
         return enchants.stream().filter(predicate);
+    }
+
+    public static CustomEnchant findByName(String name) {
+        return search(e -> e.getName().equalsIgnoreCase(name)).findFirst().orElse(null);
     }
 
     public static void register() {
@@ -31,6 +45,34 @@ public class EnchantmentHandler {
             enchant.register(Main.getInstance());
             registerCustomEnchantment(enchant);
         });
+    }
+
+    public static boolean isWorld(String world) {
+        return worldsMina.contains(world);
+    }
+
+    private static void loadMinas() {
+        worldsMina.addAll(Main.config().getStringList("mina-worlds"));
+    }
+
+    private static void loadBlocks() {
+        for(String key : Main.config().getConfigurationSection("blocks").getKeys(false)) {
+
+            Material material = Material.getMaterial(Main.config().getString("blocks." + key + ".material"));
+            int xp = Main.config().getInt("blocks." + key + ".xp");
+
+
+            if(material == null || !material.isBlock()) {
+                Main.getInstance().getLogger().warning("O material " + material + " não é valido");
+                continue;
+            }
+
+            blocks.putIfAbsent(material, xp);
+        }
+    }
+
+    public static int getXpBlock(Block block) {
+        return blocks.getOrDefault(block.getType(), 0);
     }
 
     private static void registerCustomEnchantment(Enchantment enchantment) {
@@ -57,5 +99,9 @@ public class EnchantmentHandler {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static PickaxeHandler getHandler() {
+        return handler;
     }
 }

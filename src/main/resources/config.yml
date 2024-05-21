@@ -1,0 +1,39 @@
+#                                                          #
+#.___            .___   ___________           .__          #
+#|   | ____    __| _/___\__    ___/___   ____ |  |   ______#
+#|   |/    \  / __ |/  _ \|    | /  _ \ /  _ \|  |  /  ___/#
+#|   |   |  \/ /_/ (  <_> )    |(  <_> |  <_> )  |__\___ \ #
+#|___|___|  /\____ |\____/|____| \____/ \____/|____/____  >#
+#         \/      \/                                    \/ #
+#                                                          #
+
+mina-worlds:
+  - 'world'
+
+blocks:
+  1:
+    material: 'DIAMOND_ORE'
+    xp: 20
+  2:
+    material: 'GOLD_ORE'
+    xp: 15
+  3:
+    material: 'IRON_ORE'
+    xp: 20
+  4:
+    material: 'STONE'
+    xp: 20
+
+config:
+
+  #Quantidade de Xp para upar o primeiro nivel.
+  level-xp: 200
+
+enchants:
+
+  explosion:
+
+    #Caso ativado, a durabilidade do item no momento da explosão será reduzida propriocionalmente aos blocos da explosão.
+    #Caso desativado, contará como apenas 1 bloco quebrado.
+    remove-durability: true
+    max-chance: 5

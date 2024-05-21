@@ -4,16 +4,35 @@ import com.daniel.indotools.model.CustomEnchant;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.enchantments.EnchantmentTarget;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExpEvent;
 import org.bukkit.inventory.ItemStack;
 
-public class DoubleXP extends CustomEnchant {
+import java.util.Random;
 
-    public DoubleXP() {
-        super("XP", 1237, 1, 1);
+public class Treasure extends CustomEnchant {
+
+    private static final int MAX_CHANCE = 5;
+
+    private final int chance;
+
+    public Treasure() {
+        super("Tesouro", 1256, 1, 1);
+        this.chance = new Random().nextInt(MAX_CHANCE) + 1;
+        add(BlockBreakEvent.class, this::onBreak);
     }
 
+    public void onBreak(BlockBreakEvent e, int level) {
+        if (e.getPlayer().getItemInHand().getEnchantments().containsKey(this)) {
 
+            int randomChance = new Random().nextInt(100) + 1;
+            if (randomChance <= chance) {
+
+                //TESTE
+
+            }
+        }
+    }
 
     @Override
     protected int getEnchantmentLevel(BlockExpEvent event) {
@@ -22,7 +41,7 @@ public class DoubleXP extends CustomEnchant {
 
     @Override
     protected String lore() {
-        return "§cXP 2X";
+        return "§cTesouro " + chance + "%";
     }
 
     @Override
