@@ -17,7 +17,7 @@ public class Treasure extends CustomEnchant {
     private final int chance;
 
     public Treasure() {
-        super("Tesouro", 1256, 1, 1);
+        super("Tesouro", 1236, 1, 1);
         this.chance = new Random().nextInt(MAX_CHANCE) + 1;
         add(BlockBreakEvent.class, this::onBreak);
     }
@@ -25,12 +25,7 @@ public class Treasure extends CustomEnchant {
     public void onBreak(BlockBreakEvent e, int level) {
         if (e.getPlayer().getItemInHand().getEnchantments().containsKey(this)) {
 
-            int randomChance = new Random().nextInt(100) + 1;
-            if (randomChance <= chance) {
 
-                //TESTE
-
-            }
         }
     }
 
@@ -40,7 +35,7 @@ public class Treasure extends CustomEnchant {
     }
 
     @Override
-    protected String lore() {
+    protected String lore(ItemStack itemStack) {
         return "§cTesouro " + chance + "%";
     }
 

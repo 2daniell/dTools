@@ -5,6 +5,7 @@ import com.daniel.indotools.enchants.DoubleXP;
 import com.daniel.indotools.enchants.Explosion;
 import com.daniel.indotools.enchants.Treasure;
 import com.daniel.indotools.model.CustomEnchant;
+import com.daniel.indotools.objects.Pair;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
@@ -19,25 +20,16 @@ import java.util.stream.Stream;
 
 public class Manager {
 
-    private static final PickaxeHandler handler = new PickaxeHandler();
     private static final Set<CustomEnchant> enchants = new HashSet<>();
     private static final Set<String> worldsMina = new HashSet<>();
-    private static final Map<Material, Integer> blocks = new HashMap<>();
+    private static final Map<Material, Pair<Integer, Double>> blocks = new HashMap<>();
 
     static {
-        enchants.add(new Explosion(handler));
+        enchants.add(new Explosion());
         enchants.add(new Treasure());
         enchants.add(new DoubleXP());
         loadMinas();
         loadBlocks();
-    }
-
-    private static Stream<CustomEnchant> search(Predicate<CustomEnchant> predicate) {
-        return enchants.stream().filter(predicate);
-    }
-
-    public static CustomEnchant findByName(String name) {
-        return search(e -> e.getName().equalsIgnoreCase(name)).findFirst().orElse(null);
     }
 
     public static void register() {
@@ -45,6 +37,10 @@ public class Manager {
             enchant.register(Main.getInstance());
             registerCustomEnchantment(enchant);
         });
+    }
+
+    public static void unRegister() {
+        enchants.forEach(Manager::unregisterCustomEnchantment);
     }
 
     public static boolean isWorld(String world) {
@@ -60,19 +56,25 @@ public class Manager {
 
             Material material = Material.getMaterial(Main.config().getString("blocks." + key + ".material"));
             int xp = Main.config().getInt("blocks." + key + ".xp");
-
+            double money = Main.config().getDouble("blocks." + key + ".money");
 
             if(material == null || !material.isBlock()) {
                 Main.getInstance().getLogger().warning("O material " + material + " não é valido");
                 continue;
             }
 
-            blocks.putIfAbsent(material, xp);
+            blocks.putIfAbsent(material, new Pair<>(xp, money));
         }
     }
 
     public static int getXpBlock(Block block) {
-        return blocks.getOrDefault(block.getType(), 0);
+        Pair<Integer, Double> defaultValue = new Pair<>(0, 0.0);
+        return blocks.getOrDefault(block.getType(), defaultValue).getKey();
+    }
+
+    public static double getMoneyBlock(Block block) {
+        Pair<Integer, Double> defaultValue = new Pair<>(0, 0.0);
+        return blocks.getOrDefault(block.getType(), defaultValue).getValue();
     }
 
     private static void registerCustomEnchantment(Enchantment enchantment) {
@@ -101,7 +103,25 @@ public class Manager {
         }
     }
 
-    public static PickaxeHandler getHandler() {
-        return handler;
+    private static void unregisterCustomEnchantment(Enchantment enchantment) {
+        try {
+            Field byIdField = Enchantment.class.getDeclaredField("byId");
+            byIdField.setAccessible(true);
+            Map<Integer, Enchantment> byId = (Map<Integer, Enchantment>) byIdField.get(null);
+
+            Field byNameField = Enchantment.class.getDeclaredField("byName");
+            byNameField.setAccessible(true);
+            Map<String, Enchantment> byName = (Map<String, Enchantment>) byNameField.get(null);
+
+            if (byId.containsValue(enchantment)) {
+                byId.values().removeIf(customEnchantment -> customEnchantment.equals(enchantment));
+            }
+
+            if (byName.containsValue(enchantment)) {
+                byName.values().removeIf(customEnchantment -> customEnchantment.equals(enchantment));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

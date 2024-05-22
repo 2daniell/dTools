@@ -10,6 +10,7 @@ import lombok.Setter;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.enchantments.EnchantmentTarget;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -57,6 +58,9 @@ public class Pickaxe implements Serializable {
 
     private static final int MAX_LEVEL = 100;
     private static final int LEVEL = Main.config().getInt("config.level-xp");
+    private static final int LEVEL_VANILLA_ENCHANT = Main.config().getInt("config.level-vanilla-enchant");
+    private static final int MAX_LEVEL_ENCHANTS = Main.config().getInt("config.max-level-enchants");
+    private static final List<Enchantment> VANILLA_ENCHANTS = getEnchantVanilaAvaliables();
 
     private UUID owner;
 
@@ -66,7 +70,7 @@ public class Pickaxe implements Serializable {
     private int xp;
 
     @Setter
-    private Set<Enchantment> enchantments;
+    private Map<Enchantment, Integer> enchantments;
 
     public Pickaxe(UUID owner, UUID id, int level, int xp) {
         this.owner = owner;
@@ -79,14 +83,14 @@ public class Pickaxe implements Serializable {
     public Pickaxe(UUID owner) {
         this.owner = owner;
         this.id = UUID.randomUUID();
-        this.level = 99;
+        this.level = 1;
         this.xp = 0;
-        this.type = PickaxeType.DIAMOND;
-        this.enchantments = new HashSet<>();
+        this.type = PickaxeType.WOOD;
+        this.enchantments = new HashMap<>();
     }
 
     public ItemStack getItem() {
-        ItemStack itemStack = new ItemBuilder(getMaterial()).setDisplayName(type.getDisplayName() + " " + Utils.getLevelColor(level)).build();
+        ItemStack itemStack = new ItemBuilder(getMaterial()).setDisplayName(type.getDisplayName() + " " + Utils.getLevelColor(level)).setUnbreakable().build();
 
         updateLore(itemStack);
 
@@ -101,6 +105,25 @@ public class Pickaxe implements Serializable {
     }
 
     public void addRandomVanilla() {
+        if (VANILLA_ENCHANTS.isEmpty()) return;
+
+        int size = VANILLA_ENCHANTS.size();
+        Enchantment enchantment = VANILLA_ENCHANTS.get(new Random().nextInt(size));
+
+        if (enchantment == Enchantment.SILK_TOUCH && enchantments.containsKey(Enchantment.LOOT_BONUS_BLOCKS)) addRandomVanilla();
+        if (enchantment == Enchantment.LOOT_BONUS_BLOCKS && enchantments.containsKey(Enchantment.SILK_TOUCH)) addRandomVanilla();
+
+
+        if (enchantments.containsKey(enchantment)) {
+
+            int level = enchantments.getOrDefault(enchantment, 1);
+            if (level == MAX_LEVEL_ENCHANTS) return;
+
+            enchantments.replace(enchantment, level+1);
+            return;
+        }
+
+        enchantments.put(enchantment, 1);
 
     }
 
@@ -115,9 +138,12 @@ public class Pickaxe implements Serializable {
             level++;
             xp = 0;
 
+            if(level % LEVEL_VANILLA_ENCHANT == 0) {
+                addRandomVanilla();
+            }
+
             return true;
         }
-
         return false;
     }
 
@@ -149,7 +175,7 @@ public class Pickaxe implements Serializable {
     private static List<Enchantment> getEnchantVanilaAvaliables() {
         List<Enchantment> enchantments = new ArrayList<>();
         for (Enchantment enchant : Enchantment.values()) {
-            if (enchant.getItemTarget()  == EnchantmentTarget.TOOL) {
+            if (enchant.getItemTarget()  == EnchantmentTarget.TOOL && enchant != Enchantment.DURABILITY) {
                 enchantments.add(enchant);
             }
         }
@@ -168,12 +194,13 @@ public class Pickaxe implements Serializable {
         lore.add("§8[" + getBars() + "§8]");
         lore.add(" ");
 
-        for (Enchantment enchant : enchantments) {
+        for (Enchantment enchant : enchantments.keySet()) {
             if (enchant instanceof CustomEnchant) {
                 CustomEnchant customEnchant = (CustomEnchant) enchant;
                 builder.addEnchant(customEnchant, 1, true);
-                lore.add(customEnchant.lore());
+                lore.add(customEnchant.lore(itemStack)); continue;
             }
+            builder.addEnchant(enchant, enchantments.getOrDefault(enchant, 1), true);
         }
 
         builder.setLore(lore);

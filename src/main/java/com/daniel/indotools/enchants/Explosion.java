@@ -1,10 +1,7 @@
 package com.daniel.indotools.enchants;
 
 import com.daniel.indotools.Main;
-import com.daniel.indotools.handler.Manager;
-import com.daniel.indotools.handler.PickaxeHandler;
 import com.daniel.indotools.model.CustomEnchant;
-import com.daniel.indotools.model.Pickaxe;
 import de.tr7zw.changeme.nbtapi.NBTItem;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -18,18 +15,15 @@ import org.bukkit.event.block.BlockExpEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Random;
-import java.util.UUID;
 
 public class Explosion extends CustomEnchant {
 
     private static final int MAX_CHANCE = Main.config().getInt("enchants.explosion.max-chance");
-    private final PickaxeHandler handler;
-    private final int chance;
+    private static final String CHANCE_TAG = "enchantment_explosion";
 
-    public Explosion(PickaxeHandler handler) {
+    public Explosion() {
         super("Explosão" , 1235, 1, 1);
-        this.handler = handler;
-        this.chance = new Random().nextInt(MAX_CHANCE) + 1;
+
         add(BlockBreakEvent.class, this::onBreak);
     }
 
@@ -44,9 +38,9 @@ public class Explosion extends CustomEnchant {
 
         if (inHand.getEnchantments().containsKey(this)) {
 
+            int chance = getChance(inHand);
             int randomChance = new Random().nextInt(100) + 1;
             if (randomChance <= chance) {
-
 
 
                 Material originalType = originalBlock.getType();
@@ -69,33 +63,16 @@ public class Explosion extends CustomEnchant {
                 }
                 player.playSound(player.getLocation(), Sound.EXPLODE, 2f, 2f);
             }
+        }
+    }
 
-            NBTItem nbtItem = new NBTItem(inHand);
-
-            if(!nbtItem.hasTag("custompickaxeid")) return;
-
-            UUID id = UUID.fromString(nbtItem.getString("custompickaxeid"));
-
-            Pickaxe pickaxe = handler.findPickaxeById(id);
-
-            if (pickaxe == null) return;
-
-            int xpToAdd = Manager.getXpBlock(originalBlock);
-
-            pickaxe.addXp(xpToAdd);
-            pickaxe.updateLore(inHand);
-
-            if (Main.config().getBoolean("enchants.explosion.remove-durability")) {
-
-                short durabilityLoss = (short) blocksBroken;
-
-                if (inHand.getDurability() + durabilityLoss >= inHand.getType().getMaxDurability()) {
-                    player.getInventory().setItemInHand(null);
-                    player.playSound(player.getLocation(), Sound.ITEM_BREAK, 1f, 1f);
-                } else {
-                    inHand.setDurability((short) (inHand.getDurability() + durabilityLoss));
-                }
-            }
+    public int getChance(ItemStack itemStack) {
+        NBTItem nbtItem = new NBTItem(itemStack);
+        if (nbtItem.hasTag(CHANCE_TAG)) return nbtItem.getInteger(CHANCE_TAG);
+        else {
+            int chance = new Random().nextInt(MAX_CHANCE) + 1;
+            nbtItem.setInteger(CHANCE_TAG, chance);
+            return chance;
         }
     }
 
@@ -105,8 +82,8 @@ public class Explosion extends CustomEnchant {
     }
 
     @Override
-    protected String lore() {
-        return "§cExplosão " + chance + "%";
+    protected String lore(ItemStack itemStack) {
+        return "§cExplosão " + getChance(itemStack) + "%";
     }
 
     @Override
@@ -118,6 +95,8 @@ public class Explosion extends CustomEnchant {
     public boolean conflictsWith(Enchantment other) {
         return false;
     }
+
+
 
     @Override
     public boolean canEnchantItem(ItemStack item) {

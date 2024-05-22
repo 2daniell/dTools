@@ -2,6 +2,8 @@ package com.daniel.indotools.listeners;
 
 import com.daniel.indotools.Main;
 import com.daniel.indotools.handler.Manager;
+import com.daniel.indotools.handler.PickaxeHandler;
+import com.daniel.indotools.hook.EconomyHook;
 import com.daniel.indotools.menu.Menu;
 import com.daniel.indotools.model.CustomEnchant;
 import com.daniel.indotools.model.Pickaxe;
@@ -52,6 +54,7 @@ public class Listeners implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onBreakBlock(BlockBreakEvent e) {
+        if (!Manager.isWorld(e.getBlock().getLocation().getWorld().getName())) return;
         ItemStack inHand = e.getPlayer().getItemInHand();
 
         if (inHand == null || inHand.getType() == Material.AIR) return;
@@ -61,16 +64,35 @@ public class Listeners implements Listener {
 
         UUID id = UUID.fromString(nbtItem.getString("custompickaxeid"));
 
-        Pickaxe pickaxe = Manager.getHandler().findPickaxeById(id);
-        if (pickaxe != null) return;
+        Pickaxe pickaxe = PickaxeHandler.findPickaxeById(id);
+        if (pickaxe != null) {
+            pickaxe.updateLore(inHand);
+
+            double moneyToAdd = (Manager.getMoneyBlock(e.getBlock())) * 2;
+            System.out.println("AQUI");
+            EconomyHook.depositCoins(e.getPlayer(), moneyToAdd);
+
+            return;
+        }
 
         int xp = nbtItem.getInteger("custompickaxexp");
         int level = nbtItem.getInteger("custompickaxelevel");
 
         Pickaxe pic = new Pickaxe(e.getPlayer().getUniqueId(), id, level, xp);
-        pic.setEnchantments(inHand.getEnchantments().keySet().stream().filter(enchant -> enchant instanceof CustomEnchant).collect(Collectors.toSet()));
+        pic.setEnchantments(inHand.getEnchantments());
 
-        Manager.getHandler().add(pic);
+        PickaxeHandler.getPickaxes().add(pic);
+
+    }
+
+    @EventHandler
+    public void onXpManager(BlockBreakEvent e) {
+        ItemStack inHand = e.getPlayer().getItemInHand();
+
+        if (inHand == null || inHand.getType() == Material.AIR) return;
+        if (!CustomEnchant.hasCustomEnchant(inHand)) return;
+
+
 
     }
 
@@ -86,23 +108,35 @@ public class Listeners implements Listener {
     @EventHandler
     public void swap(InventoryClickEvent e) {
 
-        System.out.println(e.getWhoClicked().getInventory().getType());
-        System.out.println((e.getWhoClicked().getOpenInventory().getType()));
-
-        InventoryType type = e.getWhoClicked().getOpenInventory().getType();
-
-
-        if (type == InventoryType.CRAFTING || type == InventoryType.ENDER_CHEST || type == InventoryType.CREATIVE ||
-        type == InventoryType.PLAYER) return;
+        InventoryType type = e.getInventory().getType();
 
         ClickType clickType = e.getClick();
         InventoryAction action = e.getAction();
 
+        if (type == InventoryType.CRAFTING || type == InventoryType.ENDER_CHEST || type == InventoryType.CREATIVE ||
+        type == InventoryType.PLAYER) return;
+
         ItemStack clicked = e.getCurrentItem();
+        int hotbarButton = e.getHotbarButton();
+        if (hotbarButton >= 0 && hotbarButton <= 8) {
+            ItemStack hotBar = e.getWhoClicked().getInventory().getItem(hotbarButton);
+            if (hotBar != null) {
+
+                NBTItem nbtItem = new NBTItem(hotBar);
+                if (!nbtItem.hasTag("custompickaxeid")) return;
+                if (clickType == ClickType.NUMBER_KEY && (action == InventoryAction.HOTBAR_SWAP || action == InventoryAction.COLLECT_TO_CURSOR)) {
+                    e.setCancelled(true);
+                    return;
+                }
+            }
+        }
+
         if (clicked == null || clicked.getType() == Material.AIR) return;
+
 
         NBTItem nbtItem = new NBTItem(clicked);
         if (!nbtItem.hasTag("custompickaxeid")) return;
+
 
         if (clickType == ClickType.NUMBER_KEY && (action == InventoryAction.HOTBAR_SWAP || action == InventoryAction.COLLECT_TO_CURSOR)) {
             e.setCancelled(true);

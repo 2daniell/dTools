@@ -45,13 +45,13 @@ public abstract class CustomEnchant extends Enchantment implements Listener {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
-    /*public static boolean hasCustomEnchant(ItemStack stack) {
-        return stack.getEnchantments().containsKey();
-    }*/
+    public static boolean hasCustomEnchant(ItemStack stack) {
+        return stack.getEnchantments().keySet().stream().anyMatch(enchantment -> enchantment instanceof CustomEnchant);
+    }
 
     protected abstract int getEnchantmentLevel(BlockExpEvent event);
 
-    protected abstract String lore();
+    protected abstract String lore(ItemStack itemStack);
 
     @Override
     public String getName() {

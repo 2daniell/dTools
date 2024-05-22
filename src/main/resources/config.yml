@@ -13,27 +13,38 @@ mina-worlds:
 blocks:
   1:
     material: 'DIAMOND_ORE'
+    money: 150.5
     xp: 20
   2:
     material: 'GOLD_ORE'
+    money: 50.0
     xp: 15
   3:
     material: 'IRON_ORE'
+    money: 25
     xp: 20
   4:
     material: 'STONE'
+    money: 15
     xp: 20
 
 config:
 
+  #Preço para comprar a picareta.
+  price: 1000
+
   #Quantidade de Xp para upar o primeiro nivel.
   level-xp: 200
+
+  #A cada nivel aqui definido a picareta ganha um encantamento vanilla aleatorio.
+  level-vanilla-enchant: 10
+
+  #Nivel maximo dos encantamentos.
+  max-level-enchants: 10
 
 enchants:
 
   explosion:
 
-    #Caso ativado, a durabilidade do item no momento da explosão será reduzida propriocionalmente aos blocos da explosão.
-    #Caso desativado, contará como apenas 1 bloco quebrado.
-    remove-durability: true
+    #Maior porcentagem de chance da explosão ser ativada.
     max-chance: 5

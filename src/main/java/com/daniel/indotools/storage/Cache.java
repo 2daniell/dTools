@@ -1,45 +1,126 @@
 package com.daniel.indotools.storage;
 
-import com.daniel.indotools.model.Pickaxe;
-import de.tr7zw.changeme.nbtapi.NBTItem;
+import com.daniel.indotools.Main;
+import com.daniel.indotools.utils.Utils;
+import com.google.gson.Gson;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
+import java.io.File;
+import java.sql.*;
 import java.util.ArrayList;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.function.Predicate;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
-public class Cache<T> extends ArrayList<T> {
+public class Cache {
 
-    public Optional<T> find(Predicate<T> predicate) {
-        return stream().filter(predicate).findFirst();
+    public static Connection connect() {
+        try {
+            File dataFolder = new File(Main.getInstance().getDataFolder() + "/database");
+            if (!dataFolder.exists()) {
+                dataFolder.mkdirs();
+            }
+
+            File file = new File(dataFolder, "database.db");
+
+            Class.forName("org.sqlite.JDBC");
+            return DriverManager.getConnection("jdbc:sqlite:" + file);
+        } catch (SQLException | ClassNotFoundException e) {
+            Main.getInstance().getLogger().warning("Conexão com database falhou!");
+            Bukkit.getPluginManager().disablePlugin(Main.getInstance());
+        }
+        return null;
     }
 
-    /*public void persist() {
-        for (T t : this) {
-            if (t instanceof Pickaxe) {
+    public static void createTable() {
+        try(Connection con = connect()) {
 
-                Pickaxe pickaxe = (Pickaxe) t;
+            String query = "CREATE TABLE IF NOT EXISTS treasure_items (name VARCHAR(50) PRIMARY KEY, item TEXT)";
 
-                Player player = Bukkit.getPlayer(pickaxe.getOwner());
-                if (player == null || !player.isOnline()) continue;
+            PreparedStatement stm = con.prepareStatement(query);
+            stm.executeUpdate();
 
-                for (ItemStack itemStack : player.getInventory().getContents()) {
-
-                    NBTItem nbtItem = new NBTItem(itemStack);
-                    if (!nbtItem.hasTag("custompickaxeid")) continue;
-
-                    UUID id = UUID.fromString(nbtItem.getString("custompickaxeid"));
-                    if (!pickaxe.getId().equals(id)) continue;
-
-
-
-                    break;
-                }
-
-            }
+        } catch (SQLException e) {
+            Main.getInstance().getLogger().warning("Conexão com database falhou!");
+            Bukkit.getPluginManager().disablePlugin(Main.getInstance());
+            throw new RuntimeException(e);
         }
-    }*/
+    }
+
+    public static void addItem(String name, String item) {
+        try(Connection con = connect()) {
+
+            String query = "INSERT INTO treasure_items (name, item) VALUES (?, ?)";
+
+            PreparedStatement stm = con.prepareStatement(query);
+            stm.setString(1, name);
+            stm.setString(2, item);
+            stm.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void deleteItem(String name) {
+        try(Connection con = connect()) {
+
+            String query = "DELETE FROM treasure_items WHERE name = ?";
+
+            PreparedStatement stm = con.prepareStatement(query);
+            stm.setString(1, name);
+            stm.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static boolean exists(String key) {
+        try (Connection con = connect()) {
+            String query = "SELECT COUNT(*) FROM treasure_items WHERE name = ?";
+
+            try (PreparedStatement stm = con.prepareStatement(query)) {
+                stm.setString(1, key);
+                try (ResultSet rs = stm.executeQuery()) {
+                    if (rs.next()) {
+                        int count = rs.getInt(1);
+                        return count > 0;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao verificar a existência do registro no banco de dados.", e);
+        }
+        return false;
+    }
+
+    public static List<ItemStack> load() {
+
+        List<ItemStack> items = new ArrayList<>();
+        try (Connection con = connect()) {
+
+            String query = "SELECT * FROM treasure_items";
+
+            PreparedStatement stm = con.prepareStatement(query);
+
+            ResultSet rs = stm.executeQuery();
+
+            while(rs.next()) {
+
+                ItemStack[] itemStacks = Utils.read(rs.getString("item"));
+
+                items.addAll(Arrays.asList(itemStacks));
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return items;
+    }
+
+
 }

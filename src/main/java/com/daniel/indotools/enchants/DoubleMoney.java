@@ -16,35 +16,23 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.UUID;
 
-public class DoubleXP extends CustomEnchant {
+public class DoubleMoney extends CustomEnchant {
 
-    public DoubleXP() {
-        super("XP", 1237, 1, 1);
+    public DoubleMoney() {
+        super("Money", 1238, 1, 1);
 
-        add(BlockBreakEvent.class, this::onBreakXP);
+        add(BlockBreakEvent.class, this::onBreakMoney);
     }
 
-    public void onBreakXP(BlockBreakEvent e, int level) {
+    public void onBreakMoney(BlockBreakEvent e, int level) {
 
         ItemStack inHand = e.getPlayer().getItemInHand();
 
         if (inHand.getEnchantments().containsKey(this)) {
 
-            NBTItem nbtItem = new NBTItem(inHand);
+            double moneyToAdd = (Manager.getMoneyBlock(e.getBlock())) * 2;
 
-            if(!nbtItem.hasTag("custompickaxeid")) return;
-
-            UUID id = UUID.fromString(nbtItem.getString("custompickaxeid"));
-
-            Pickaxe pickaxe = PickaxeHandler.findPickaxeById(id);
-
-            if (pickaxe == null) return;
-
-            Block originalBlock = e.getBlock();
-
-            int xpToAdd = (Manager.getXpBlock(originalBlock)) * 2;
-
-            pickaxe.addXp(xpToAdd);
+            EconomyHook.depositCoins(e.getPlayer(), moneyToAdd);
 
         }
     }
@@ -56,7 +44,7 @@ public class DoubleXP extends CustomEnchant {
 
     @Override
     protected String lore(ItemStack itemStack) {
-        return "§cXP 2X";
+        return "§cMoney 2X";
     }
 
     @Override
