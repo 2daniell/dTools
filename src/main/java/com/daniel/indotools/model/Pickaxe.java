@@ -116,45 +116,31 @@ public class Pickaxe implements Serializable {
     public void addRandomVanilla() {
         if (VANILLA_ENCHANTS.isEmpty()) return;
 
-        int size = VANILLA_ENCHANTS.size();
-        Enchantment enchantment = VANILLA_ENCHANTS.get(new Random().nextInt(size));
+        Random random = new Random();
+        List<Enchantment> availableEnchants = new ArrayList<>(VANILLA_ENCHANTS);
+        Collections.shuffle(availableEnchants);
 
-        if (enchantments.containsKey(enchantment) && enchantments.equals(Enchantment.SILK_TOUCH)) {
-            addRandomVanilla();
-            return;
-        }
+        for (Enchantment enchantment : availableEnchants) {
+            Set<Enchantment> addedEnchants = enchantments.keySet();
 
-        if (enchantment.equals(Enchantment.LOOT_BONUS_BLOCKS) && enchantments.containsKey(Enchantment.SILK_TOUCH)) {
-            addRandomVanilla();
-            return;
-        }
+            if (addedEnchants.contains(Enchantment.SILK_TOUCH) && enchantment.equals(Enchantment.LOOT_BONUS_BLOCKS)) continue;
+            if (addedEnchants.contains(Enchantment.LOOT_BONUS_BLOCKS) && enchantment.equals(Enchantment.SILK_TOUCH)) continue;
 
-        if (enchantment.equals(Enchantment.SILK_TOUCH) && enchantments.containsKey(Enchantment.LOOT_BONUS_BLOCKS)) {
-            addRandomVanilla();
-            return;
-        }
+            if (enchantments.containsKey(enchantment) && enchantments.get(enchantment) >= MAX_LEVEL_ENCHANTS) continue;
 
-        if(enchantments.containsKey(enchantment)) {
-            int enchantmentLevel = enchantments.get(enchantment);
-            if (enchantmentLevel >= LEVEL_VANILLA_ENCHANT) {
-                addRandomVanilla();
-                return;
+            if (enchantment.equals(Enchantment.SILK_TOUCH)) {
+                int randomChance = random.nextInt(100) + 1;
+                if (randomChance > SILK_MAX_CHANCE) continue;
             }
-            enchantments.put(enchantment, (enchantmentLevel+1));
-            return;
+
+            if (enchantment.equals(Enchantment.SILK_TOUCH) && addedEnchants.contains(enchantment)) continue;
+
+            int enchantmentLevel = enchantments.getOrDefault(enchantment, 0) + 1;
+            enchantments.put(enchantment, enchantmentLevel);
+            break;
         }
-
-        if (enchantment.equals(Enchantment.SILK_TOUCH)) {
-
-            int randomChance = new Random().nextInt(100) + 1;
-            if (randomChance <= SILK_MAX_CHANCE) {
-
-                enchantments.put(enchantment, 1);
-                return;
-            }
-        }
-        enchantments.put(enchantment, 1);
     }
+
 
 
     public void addRandomEnchant() {
@@ -164,6 +150,10 @@ public class Pickaxe implements Serializable {
         if (randomChance <= CUSTOM_ENCHANT_CHANCE) {
             int size = CUSTOM_ENCHANTS.size();
             CustomEnchant enchant = CUSTOM_ENCHANTS.get(new Random().nextInt(size));
+
+            Set<Enchantment> customEnchantSet = enchantments.keySet();
+            if (customEnchantSet.containsAll(CUSTOM_ENCHANTS)) return;
+
 
             if (enchantments.containsKey(enchant)) {
                 addRandomEnchant();
@@ -188,10 +178,6 @@ public class Pickaxe implements Serializable {
             level++;
             leveledUp = true;
 
-            if (level >= MAX_LEVEL) {
-                xp = 0;
-                break;
-            }
 
             if (level % LEVEL_VANILLA_ENCHANT == 0) {
                 addRandomVanilla();
@@ -199,6 +185,10 @@ public class Pickaxe implements Serializable {
 
             if (level >= CUSTOM_LEVEL) {
                 addRandomEnchant();
+            }
+            if (level >= MAX_LEVEL) {
+                xp = 0;
+                break;
             }
         }
 

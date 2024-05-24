@@ -6,6 +6,7 @@ import de.tr7zw.changeme.nbtapi.NBTItem;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.enchantments.EnchantmentTarget;
+import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockEvent;
@@ -14,6 +15,7 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 public class DoubleDrop extends CustomEnchant {
 
@@ -64,17 +66,23 @@ public class DoubleDrop extends CustomEnchant {
             int randomChance = new Random().nextInt(100) + 1;
             if (randomChance <= chance) {
 
-                List<ItemStack> drops = (List<ItemStack>) e.getBlock().getDrops();
-                for (ItemStack drop : drops) {
-                    drop.setAmount(drop.getAmount() * 2);
+                Player player = e.getPlayer();
+
+                if (inHand.getEnchantments().containsKey(Enchantment.SILK_TOUCH)) {
+
+                    ItemStack silkItem = new ItemStack(e.getBlock().getType(), 2); //dobro
+                    player.getInventory().addItem(silkItem);
+
+                } else {
+
+                    List<ItemStack> drops = e.getBlock().getDrops().stream().peek(drop -> drop.setAmount(drop.getAmount() * 2)).collect(Collectors.toList());
+                    player.getInventory().addItem(drops.toArray(new ItemStack[0]));
+
                 }
 
                 if (Main.config().getBoolean("enchants.doubledrop.send-message")) {
-
-                    e.getPlayer().sendMessage(Main.config().getString("enchants.doubledrop.message").replace('&', '§'));
-
+                    player.sendMessage(Main.config().getString("enchants.doubledrop.message").replace('&', '§'));
                 }
-
             }
         }
     }

@@ -47,21 +47,22 @@ public class PickaxeInventory extends Menu {
 
                     for (ItemStack item : player.getInventory().getContents()) {
 
-                        if (item == null || item.getType() == Material.AIR) {
+                        if (item == null || item.getType() == Material.AIR) continue;
 
-                            NBTItem nbtItem = new NBTItem(item);
-                            nbtItem.hasTag("custompickaxeid");
+                        NBTItem nbtItem = new NBTItem(item);
+                        nbtItem.hasTag("custompickaxeid");
 
-                            player.closeInventory();
-                            player.sendMessage("Você só pode usar uma picareta por vez.");
-                            return;
+                        player.closeInventory();
+                        player.sendMessage("§cVocê só pode usar uma picareta por vez.");
+                        return;
 
-                        }
                     }
                     Pickaxe pickaxe = new Pickaxe();
                     PickaxeHandler.getPickaxes().add(pickaxe);
                     player.getInventory().addItem(pickaxe.getItem());
                     EconomyHook.removeCoins(player, PRICE);
+                    player.playSound(player.getLocation(), Sound.LEVEL_UP, 1f, 1f);
+                    player.closeInventory();
 
                 } else {
                     player.sendMessage(Main.config().getString("message.inventoryfull").replace('&', '§'));

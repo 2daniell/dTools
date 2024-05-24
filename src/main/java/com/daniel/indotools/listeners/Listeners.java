@@ -20,6 +20,7 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 public class Listeners implements Listener {
@@ -130,6 +131,7 @@ public class Listeners implements Listener {
 
     @EventHandler
     public void swap(InventoryClickEvent e) {
+        if (e.getInventory().getHolder() instanceof Menu) return;
 
         InventoryType type = e.getInventory().getType();
 
@@ -137,7 +139,25 @@ public class Listeners implements Listener {
         InventoryAction action = e.getAction();
 
         if (type == InventoryType.CRAFTING || type == InventoryType.ENDER_CHEST || type == InventoryType.CREATIVE ||
-        type == InventoryType.PLAYER) return;
+                type == InventoryType.PLAYER) {
+            if (e.getCurrentItem() == null || e.getCurrentItem().getType() == Material.AIR) return;
+
+            if (e.getClickedInventory().getType() != InventoryType.PLAYER) {
+
+                for (ItemStack item : e.getWhoClicked().getInventory().getContents()) {
+
+                    if (item == null || item.getType() == Material.AIR) continue;
+
+                    NBTItem item1 = new NBTItem(item);
+
+                    if (!item1.hasTag("custompickaxeid")) continue;
+                    e.setCancelled(true);
+                    return;
+
+                }
+            }
+            return;
+        }
 
         ItemStack clicked = e.getCurrentItem();
         int hotbarButton = e.getHotbarButton();
