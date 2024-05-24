@@ -13,31 +13,40 @@ mina-worlds:
 blocks:
   1:
     material: 'DIAMOND_ORE'
-    money: 150.5
     xp: 20
   2:
     material: 'GOLD_ORE'
-    money: 50.0
     xp: 15
   3:
     material: 'IRON_ORE'
-    money: 25
     xp: 20
   4:
     material: 'STONE'
-    money: 15
     xp: 20
 
 config:
 
+  #Caso ativado, o jogador não perde a picareta ao morrer
+  keep-item: true
+
+  #Caso desativado, o jogador não pode dropar a picareta.
+  can-drop: false
+
+  #A partir do nivel definido no custom level, a cada nivel, chance de ganhar encantamento customizado.
+  custom-enchant-chance: 5.5 #porcento
+  custom-level: 80
+
+  #Upar a Tier a determinadas quantidades de level.
+  level-up-tier: 20 #A cada 20 niveis, upa para proxima Tier.
+
   #Preço para comprar a picareta.
   price: 1000
 
-  #Quantidade de Xp para upar o primeiro nivel.
+  #Quantidade adicionada a mais a cada nivel.
   level-xp: 200
 
   #A cada nivel aqui definido a picareta ganha um encantamento vanilla aleatorio.
-  level-vanilla-enchant: 10
+  level-vanilla-enchant: 5
 
   #Nivel maximo dos encantamentos.
   max-level-enchants: 10
@@ -46,5 +55,35 @@ enchants:
 
   explosion:
 
+    #Enviar mensagem ao encantamento ser executado.
+    send-message: false
+    message: '&aEXPLOSÃO!'
+
     #Maior porcentagem de chance da explosão ser ativada.
     max-chance: 5
+
+  doubledrop:
+
+    send-message: false
+    message: '&aDrop bonus!'
+
+    max-chance: 5
+
+  xp:
+
+    send-message: false
+    message: '&aXP bonus!'
+
+    max-chance: 5
+
+  treasure:
+
+    send-message: true
+    message: '&aTesouro encontrado!'
+
+    max-chance: 5
+
+message:
+  no-balance: '&4&lERRO &cSem dinheiro suficiente.'
+  inventoryfull: '&4&lERRO &cInventario cheio.'
+  purchased: '&a&lSUCESSO &aPicareta adquirida com sucesso.'

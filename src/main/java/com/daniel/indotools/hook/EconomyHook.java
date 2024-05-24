@@ -31,4 +31,7 @@ public final class EconomyHook {
         return economy.getBalance(player);
     }
 
+    public static void removeCoins(OfflinePlayer player, double coins) {
+        economy.withdrawPlayer(player, coins);
+    }
 }

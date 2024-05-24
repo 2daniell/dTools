@@ -2,11 +2,14 @@ package com.daniel.indotools.model;
 
 import com.daniel.indotools.Main;
 import com.daniel.indotools.api.ItemBuilder;
+import com.daniel.indotools.handler.Manager;
 import com.daniel.indotools.utils.Utils;
 import de.tr7zw.changeme.nbtapi.NBTItem;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.enchantments.EnchantmentTarget;
@@ -24,45 +27,44 @@ public class Pickaxe implements Serializable {
     @AllArgsConstructor
     private enum PickaxeType {
 
-        WOOD(0, 19, Material.WOOD_PICKAXE, "§fPicareta"),
-        STONE(20, 39, Material.STONE_PICKAXE, "§fPicareta"),
-        GOLD(40, 59, Material.GOLD_PICKAXE, "§ePicareta"),
-        IRON(60, 79, Material.IRON_PICKAXE, "§ePicareta"),
-        DIAMOND(80, 100, Material.DIAMOND_PICKAXE, "§bPicareta");
+        WOOD(0, Material.WOOD_PICKAXE, "&fPicareta &8[&7Tier &lI&8]"),
+        GOLD(1, Material.GOLD_PICKAXE, "&fPicareta &8[&eTier &lII&8]"),
+        STONE(2, Material.STONE_PICKAXE, "&9Picareta &8[&fTier &9&lIII&8]"),
+        IRON(3, Material.IRON_PICKAXE, "&3Picareta &8[&fTier &3&lIV&8]"),
+        DIAMOND(4, Material.DIAMOND_PICKAXE, "&ePicareta &8[&6Tier &lV&8]");
 
-        private final int minLevel;
-        private final int maxLevel;
+
+        private int tier;
         private final Material material;
         private final String displayName;
 
-
-        public static Material getMaterialByLevel(int level) {
-            for (PickaxeType pickaxeType : values()) {
-                if (level >= pickaxeType.minLevel && level <= pickaxeType.maxLevel) {
-                    return pickaxeType.getMaterial();
-                }
+        public static Material getMaterialByTier(int tier) {
+            for (PickaxeType type : values()) {
+                if (type.getTier() == tier) return type.getMaterial();
             }
-            return PickaxeType.WOOD.material;
+            return null;
         }
 
-        public static PickaxeType getByLevel(int level) {
-            for (PickaxeType pickaxeType : values()) {
-                if (level >= pickaxeType.minLevel && level <= pickaxeType.maxLevel) {
-                    return pickaxeType;
-                }
+        public static PickaxeType getTypeByLevel(int level) {
+            int UP_TIER = Main.config().getInt("config.level-up-tier");
+            int tier = (level / UP_TIER);
+            for (PickaxeType type : values()) {
+                if (type.getTier() == tier) return type;
             }
-            return PickaxeType.WOOD;
+            return null;
         }
-
     }
 
     private static final int MAX_LEVEL = 100;
+    private static final int UP_TIER = Main.config().getInt("config.level-up-tier");
     private static final int LEVEL = Main.config().getInt("config.level-xp");
     private static final int LEVEL_VANILLA_ENCHANT = Main.config().getInt("config.level-vanilla-enchant");
     private static final int MAX_LEVEL_ENCHANTS = Main.config().getInt("config.max-level-enchants");
+    private static final double CUSTOM_ENCHANT_CHANCE = Main.config().getDouble("config.custom-enchant-chance");
+    private static final int CUSTOM_LEVEL = Main.config().getInt("config.custom-level");
+    private static final double SILK_MAX_CHANCE = Main.config().getInt("config.silk-max-chace");
     private static final List<Enchantment> VANILLA_ENCHANTS = getEnchantVanilaAvaliables();
-
-    private UUID owner;
+    private static final List<CustomEnchant> CUSTOM_ENCHANTS = getCustomEnchantments();
 
     private final UUID id;
     private PickaxeType type;
@@ -72,16 +74,14 @@ public class Pickaxe implements Serializable {
     @Setter
     private Map<Enchantment, Integer> enchantments;
 
-    public Pickaxe(UUID owner, UUID id, int level, int xp) {
-        this.owner = owner;
+    public Pickaxe(UUID id, int level, int xp) {
         this.id = id;
-        this.type = PickaxeType.getByLevel(level);
+        this.type = PickaxeType.getTypeByLevel(level);
         this.level = level;
         this.xp = xp;
     }
 
-    public Pickaxe(UUID owner) {
-        this.owner = owner;
+    public Pickaxe() {
         this.id = UUID.randomUUID();
         this.level = 1;
         this.xp = 0;
@@ -90,7 +90,7 @@ public class Pickaxe implements Serializable {
     }
 
     public ItemStack getItem() {
-        ItemStack itemStack = new ItemBuilder(getMaterial()).setDisplayName(type.getDisplayName() + " " + Utils.getLevelColor(level)).setUnbreakable().build();
+        ItemStack itemStack = new ItemBuilder(getMaterial()).addFlags(ItemFlag.HIDE_ATTRIBUTES).addFlags(ItemFlag.HIDE_UNBREAKABLE).setDisplayName(ChatColor.translateAlternateColorCodes('&', type.getDisplayName())).setUnbreakable().build();
 
         updateLore(itemStack);
 
@@ -104,27 +104,75 @@ public class Pickaxe implements Serializable {
         return itemStack;
     }
 
+    private ItemStack update(ItemStack itemStack) {
+        itemStack.setType(getMaterial());
+        itemStack.setItemMeta(getItem().getItemMeta());
+
+        updateLore(itemStack);
+
+        return itemStack;
+    }
+
     public void addRandomVanilla() {
         if (VANILLA_ENCHANTS.isEmpty()) return;
 
         int size = VANILLA_ENCHANTS.size();
         Enchantment enchantment = VANILLA_ENCHANTS.get(new Random().nextInt(size));
 
-        if (enchantment == Enchantment.SILK_TOUCH && enchantments.containsKey(Enchantment.LOOT_BONUS_BLOCKS)) addRandomVanilla();
-        if (enchantment == Enchantment.LOOT_BONUS_BLOCKS && enchantments.containsKey(Enchantment.SILK_TOUCH)) addRandomVanilla();
-
-
-        if (enchantments.containsKey(enchantment)) {
-
-            int level = enchantments.getOrDefault(enchantment, 1);
-            if (level == MAX_LEVEL_ENCHANTS) return;
-
-            enchantments.replace(enchantment, level+1);
+        if (enchantments.containsKey(enchantment) && enchantments.equals(Enchantment.SILK_TOUCH)) {
+            addRandomVanilla();
             return;
         }
 
-        enchantments.put(enchantment, 1);
+        if (enchantment.equals(Enchantment.LOOT_BONUS_BLOCKS) && enchantments.containsKey(Enchantment.SILK_TOUCH)) {
+            addRandomVanilla();
+            return;
+        }
 
+        if (enchantment.equals(Enchantment.SILK_TOUCH) && enchantments.containsKey(Enchantment.LOOT_BONUS_BLOCKS)) {
+            addRandomVanilla();
+            return;
+        }
+
+        if(enchantments.containsKey(enchantment)) {
+            int enchantmentLevel = enchantments.get(enchantment);
+            if (enchantmentLevel >= LEVEL_VANILLA_ENCHANT) {
+                addRandomVanilla();
+                return;
+            }
+            enchantments.put(enchantment, (enchantmentLevel+1));
+            return;
+        }
+
+        if (enchantment.equals(Enchantment.SILK_TOUCH)) {
+
+            int randomChance = new Random().nextInt(100) + 1;
+            if (randomChance <= SILK_MAX_CHANCE) {
+
+                enchantments.put(enchantment, 1);
+                return;
+            }
+        }
+        enchantments.put(enchantment, 1);
+    }
+
+
+    public void addRandomEnchant() {
+        if (CUSTOM_ENCHANTS.isEmpty()) return;
+
+        int randomChance = new Random().nextInt(100) + 1;
+        if (randomChance <= CUSTOM_ENCHANT_CHANCE) {
+            int size = CUSTOM_ENCHANTS.size();
+            CustomEnchant enchant = CUSTOM_ENCHANTS.get(new Random().nextInt(size));
+
+            if (enchantments.containsKey(enchant)) {
+                addRandomEnchant();
+                return;
+            }
+
+            enchantments.put(enchant, 1);
+
+        }
     }
 
     public boolean addXp(int xpToAdd) {
@@ -133,19 +181,53 @@ public class Pickaxe implements Serializable {
         }
 
         this.xp += xpToAdd;
+        boolean leveledUp = false;
 
-        if (xp >= getXpNextLevel()) {
+        while (xp >= getXpNextLevel()) {
+            xp -= getXpNextLevel();
             level++;
-            xp = 0;
+            leveledUp = true;
 
-            if(level % LEVEL_VANILLA_ENCHANT == 0) {
+            if (level >= MAX_LEVEL) {
+                xp = 0;
+                break;
+            }
+
+            if (level % LEVEL_VANILLA_ENCHANT == 0) {
                 addRandomVanilla();
             }
 
-            return true;
+            if (level >= CUSTOM_LEVEL) {
+                addRandomEnchant();
+            }
         }
-        return false;
+
+        return leveledUp;
     }
+
+    private int lastTier() {
+        return (MAX_LEVEL / UP_TIER);
+    }
+
+    public boolean canUpTier() {
+        if (getTier() >= lastTier()) return false;
+        return level % UP_TIER == 0;
+    }
+
+    public boolean isMaxLevel() { return level == MAX_LEVEL; }
+
+    public void upTier(ItemStack itemStack) {
+        if (!(canUpTier())) return;
+        if (PickaxeType.getMaterialByTier(getTier()) != type.material) {
+            this.type = PickaxeType.getTypeByLevel(level);
+            update(itemStack);
+        }
+    }
+
+    private int getTier() {
+        return (level / UP_TIER);
+    }
+
 
     public int getXpNextLevel() {
         if (level >= MAX_LEVEL) return 0;
@@ -153,33 +235,43 @@ public class Pickaxe implements Serializable {
     }
 
     private String getBars() {
-        int barsCount = 50;
+        int barsCount = 50;  // Total de barras
         int completedBars = (int) Math.ceil((double) xp / getXpNextLevel() * barsCount);
         StringBuilder bars = new StringBuilder();
 
-        for (int i = 0; i < completedBars; i++) {
-            bars.append("§a|");
-        }
+        if (level >= MAX_LEVEL) {
+            for (int i = 0; i < barsCount; i++) {
+                bars.append("§a|");
+            }
+        } else {
+            for (int i = 0; i < completedBars; i++) {
+                bars.append("§a|");
+            }
 
-        for (int i = completedBars; i < barsCount; i++) {
-            bars.append("§c|");
+            for (int i = completedBars; i < barsCount; i++) {
+                bars.append("§c|");
+            }
         }
 
         return bars.toString();
     }
 
     private Material getMaterial() {
-        return PickaxeType.getMaterialByLevel(getLevel());
+        return PickaxeType.getMaterialByTier(getTier());
     }
 
     private static List<Enchantment> getEnchantVanilaAvaliables() {
         List<Enchantment> enchantments = new ArrayList<>();
         for (Enchantment enchant : Enchantment.values()) {
-            if (enchant.getItemTarget()  == EnchantmentTarget.TOOL && enchant != Enchantment.DURABILITY) {
+            if (enchant.getItemTarget()  == EnchantmentTarget.TOOL && enchant != Enchantment.DURABILITY && !(enchant instanceof CustomEnchant)) {
                 enchantments.add(enchant);
             }
         }
         return enchantments;
+    }
+
+    private static List<CustomEnchant> getCustomEnchantments() {
+        return new ArrayList<>(Manager.getEnchants());
     }
 
     public void updateLore(ItemStack itemStack) {
@@ -188,11 +280,10 @@ public class Pickaxe implements Serializable {
 
         List<String> lore = new ArrayList<>();
 
-        lore.add(0, " ");
-        lore.add("§7Level §e" + level);
-        lore.add("§7XP §e" + xp + "§f/§e" + getXpNextLevel());
+        lore.add((level < MAX_LEVEL) ? "§7Level: §f" + level : "§7Level: §e" + level);
+        lore.add((level < MAX_LEVEL) ? "§7XP §f" + xp + "§f/§f" + getXpNextLevel() : "§7XP: §eMAX");
         lore.add("§8[" + getBars() + "§8]");
-        lore.add(" ");
+        if (CustomEnchant.hasCustomEnchant(itemStack)) lore.add(" ");
 
         for (Enchantment enchant : enchantments.keySet()) {
             if (enchant instanceof CustomEnchant) {

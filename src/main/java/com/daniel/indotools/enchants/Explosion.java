@@ -62,16 +62,24 @@ public class Explosion extends CustomEnchant {
                     }
                 }
                 player.playSound(player.getLocation(), Sound.EXPLODE, 2f, 2f);
+
+                if (Main.config().getBoolean("enchants.explosion.send-message")) {
+
+                    e.getPlayer().sendMessage(Main.config().getString("enchants.explosion.message").replace('&', '§'));
+
+                }
             }
         }
     }
 
     public int getChance(ItemStack itemStack) {
         NBTItem nbtItem = new NBTItem(itemStack);
-        if (nbtItem.hasTag(CHANCE_TAG)) return nbtItem.getInteger(CHANCE_TAG);
-        else {
+        if (nbtItem.hasTag(CHANCE_TAG)) {
+            return nbtItem.getInteger(CHANCE_TAG);
+        } else {
             int chance = new Random().nextInt(MAX_CHANCE) + 1;
             nbtItem.setInteger(CHANCE_TAG, chance);
+            nbtItem.applyNBT(itemStack);
             return chance;
         }
     }
@@ -83,7 +91,7 @@ public class Explosion extends CustomEnchant {
 
     @Override
     protected String lore(ItemStack itemStack) {
-        return "§cExplosão " + getChance(itemStack) + "%";
+        return "§bEXPLOSIVE " + getChance(itemStack) + "%";
     }
 
     @Override

@@ -36,16 +36,6 @@ public class Main extends JavaPlugin {
         Manager.unRegister();
     }
 
-    /*
-    * FALTA:
-    *
-    * random custom enchant.
-    * teasure enchant
-    * price pickaxe config
-    * só
-    *
-    * */
-
     private void register() {
         Bukkit.getPluginManager().registerEvents(new Listeners(), this);
 

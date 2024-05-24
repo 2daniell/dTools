@@ -22,7 +22,7 @@ public class TesouroCommand implements CommandExecutor {
         Player player = (Player) sender;
         if (player.hasPermission("indotools.admin")) {
             if (args.length == 0) {
-                player.sendMessage("§4§lERRO §cUse, /itemtesouro (add/remove) <nome>");
+                player.sendMessage("§4§lERRO §cUse, /itemtesouro <reload> ou /itemtesouro (add/remove) <nome>");
 
                 for(ItemStack i : TreasureHandler.getItems()) {
                     player.getInventory().addItem(i);
@@ -54,7 +54,7 @@ public class TesouroCommand implements CommandExecutor {
                         player.sendMessage("§4§lERRO §cNome já existente ou invalido.");
                     }
                 } else {
-                    player.sendMessage("§4§lERRO §cUse, /itemtesouro (add/remove) <nome>");
+                    player.sendMessage("§4§lERRO §cUse, /itemtesouro <reload> ou /itemtesouro (add/remove) <nome>");
                 }
             } else if (args[0].equalsIgnoreCase("remove")) {
                 if (args.length > 1) {
@@ -67,11 +67,14 @@ public class TesouroCommand implements CommandExecutor {
                         player.sendMessage("§a§lSUCESSO §aItem removido.");
 
                     } else {
-                        player.sendMessage("§4§lERRO §cNome não existente ou invalido.");
+                        player.sendMessage("§4§lERRO §cItem não existente ou nome invalido.");
                     }
                 } else {
-                    player.sendMessage("§4§lERRO §cUse, /itemtesouro (add/remove) <nome>");
+                    player.sendMessage("§4§lERRO §cUse, /itemtesouro <reload> ou /itemtesouro (add/remove) <nome>");
                 }
+            } else if (args[0].equalsIgnoreCase("reload")) {
+                TreasureHandler.load();
+                player.sendMessage("§a§lSUCESSO §aTesouros recarregados.");
             }
 
         }

@@ -3,13 +3,11 @@ package com.daniel.indotools.listeners;
 import com.daniel.indotools.Main;
 import com.daniel.indotools.handler.Manager;
 import com.daniel.indotools.handler.PickaxeHandler;
-import com.daniel.indotools.hook.EconomyHook;
 import com.daniel.indotools.menu.Menu;
-import com.daniel.indotools.model.CustomEnchant;
 import com.daniel.indotools.model.Pickaxe;
 import de.tr7zw.changeme.nbtapi.NBTItem;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -17,14 +15,16 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.*;
-import org.bukkit.inventory.Inventory;
+import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.*;
 
 public class Listeners implements Listener {
+
+    private final Map<UUID, List<ItemStack>> pickaxes = new HashMap<>();
 
     @EventHandler
     public void onCraft(CraftItemEvent e) {
@@ -40,15 +40,50 @@ public class Listeners implements Listener {
     }
 
     @EventHandler
-    public void onPlayerDeath(PlayerDeathEvent e) {
-        Player player = e.getEntity();
-        for (ItemStack itemStack : player.getInventory().getContents()) {
+    public void onPlayerRespawn(PlayerRespawnEvent e) {
+        if (pickaxes.containsKey(e.getPlayer().getUniqueId())) {
+
+            Player player = e.getPlayer();
+
+            pickaxes.get(player.getUniqueId()).forEach(item -> player.getInventory().addItem(item));
+            pickaxes.remove(player.getUniqueId());
+
+        }
+    }
+
+    @EventHandler
+    public void onDrop(PlayerDropItemEvent e) {
+        if (!Main.config().getBoolean("config.can-drop")) {
+
+            ItemStack itemStack = e.getItemDrop().getItemStack();
+
+            if (itemStack == null || itemStack.getType() == Material.AIR) return;
 
             NBTItem nbtItem = new NBTItem(itemStack);
-            if (!nbtItem.hasTag("custompickaxeid")) continue;
+            if (!nbtItem.hasTag("custompickaxeid")) return;
 
+            e.setCancelled(true);
 
+        }
+    }
 
+    @EventHandler
+    public void onPlayerDeath(PlayerDeathEvent e) {
+        if (Main.config().getBoolean("config.keep-item")) {
+            Player player = e.getEntity();
+
+            List<ItemStack> list = new ArrayList<>();
+            for (ItemStack itemStack : player.getInventory().getContents()) {
+                if (itemStack == null || itemStack.getType() == Material.AIR) continue;
+                NBTItem nbtItem = new NBTItem(itemStack);
+                if (!nbtItem.hasTag("custompickaxeid")) continue;
+
+                list.add(itemStack);
+
+                e.getDrops().removeIf(drop -> drop.equals(itemStack));
+
+            }
+            pickaxes.put(player.getUniqueId(), list);
         }
     }
 
@@ -66,33 +101,21 @@ public class Listeners implements Listener {
 
         Pickaxe pickaxe = PickaxeHandler.findPickaxeById(id);
         if (pickaxe != null) {
+            if (pickaxe.isMaxLevel()) return;
+            int toAdd = Manager.getXpBlock(e.getBlock());
+            if (pickaxe.addXp(toAdd)) e.getPlayer().playSound(e.getPlayer().getLocation(), Sound.LEVEL_UP, 1f, 1f);
+            if (pickaxe.canUpTier()) pickaxe.upTier(inHand);
             pickaxe.updateLore(inHand);
-
-            double moneyToAdd = (Manager.getMoneyBlock(e.getBlock())) * 2;
-            System.out.println("AQUI");
-            EconomyHook.depositCoins(e.getPlayer(), moneyToAdd);
-
             return;
         }
 
         int xp = nbtItem.getInteger("custompickaxexp");
         int level = nbtItem.getInteger("custompickaxelevel");
 
-        Pickaxe pic = new Pickaxe(e.getPlayer().getUniqueId(), id, level, xp);
-        pic.setEnchantments(inHand.getEnchantments());
+        Pickaxe pic = new Pickaxe(id, level, xp);
+        pic.setEnchantments(new HashMap<>(inHand.getEnchantments()));
 
         PickaxeHandler.getPickaxes().add(pic);
-
-    }
-
-    @EventHandler
-    public void onXpManager(BlockBreakEvent e) {
-        ItemStack inHand = e.getPlayer().getItemInHand();
-
-        if (inHand == null || inHand.getType() == Material.AIR) return;
-        if (!CustomEnchant.hasCustomEnchant(inHand)) return;
-
-
 
     }
 

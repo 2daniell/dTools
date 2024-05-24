@@ -4,10 +4,7 @@ import com.daniel.indotools.Main;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import org.apache.commons.codec.binary.Base64;
-import org.bukkit.Bukkit;
-import org.bukkit.Color;
-import org.bukkit.DyeColor;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -18,6 +15,7 @@ import org.bukkit.inventory.meta.SkullMeta;
 
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ItemBuilder {
 
@@ -147,9 +145,7 @@ public class ItemBuilder {
     }
 
     public ItemBuilder setName(String displayname) {
-        ItemMeta meta = getItemMeta();
-        meta.setDisplayName(displayname);
-        setItemMeta(meta);
+        setDisplayName(ChatColor.translateAlternateColorCodes('&', displayname));
         return this;
     }
 
@@ -165,6 +161,12 @@ public class ItemBuilder {
         return this;
     }
 
+    public ItemBuilder removeFlags(ItemFlag... flags) {
+        ItemMeta itemMeta = stack.getItemMeta();
+        itemMeta.removeItemFlags(flags);
+        return this;
+    }
+
     public ItemBuilder setLore (String lore) {
         ArrayList<String> loreList = new ArrayList<>();
         loreList.add(lore);
@@ -177,11 +179,15 @@ public class ItemBuilder {
     public ItemBuilder setLore(String... lore) {
         ItemMeta meta = getItemMeta();
         if (lore != null && lore.length > 0) {
-            meta.setLore(Arrays.asList(lore));
+            List<String> coloredLore = Arrays.stream(lore)
+                    .map(line -> ChatColor.translateAlternateColorCodes('&', line))
+                    .collect(Collectors.toList());
+            meta.setLore(coloredLore);
         }
         setItemMeta(meta);
         return this;
     }
+
 
     public ItemBuilder addEnchant(Enchantment enchantment, int level) {
         ItemMeta meta = getItemMeta();
@@ -194,6 +200,11 @@ public class ItemBuilder {
         ItemMeta meta = getItemMeta();
         meta.addItemFlags(flag);
         setItemMeta(meta);
+        return this;
+    }
+
+    public ItemBuilder addFlags(ItemFlag flag) {
+        addItemFlag(flag);
         return this;
     }
 

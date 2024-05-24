@@ -1,6 +1,7 @@
 package com.daniel.indotools.handler;
 
 import com.daniel.indotools.Main;
+import com.daniel.indotools.enchants.DoubleDrop;
 import com.daniel.indotools.enchants.DoubleXP;
 import com.daniel.indotools.enchants.Explosion;
 import com.daniel.indotools.enchants.Treasure;
@@ -22,12 +23,13 @@ public class Manager {
 
     private static final Set<CustomEnchant> enchants = new HashSet<>();
     private static final Set<String> worldsMina = new HashSet<>();
-    private static final Map<Material, Pair<Integer, Double>> blocks = new HashMap<>();
+    private static final Map<Material, Integer> blocks = new HashMap<>();
 
     static {
         enchants.add(new Explosion());
         enchants.add(new Treasure());
         enchants.add(new DoubleXP());
+        enchants.add(new DoubleDrop());
         loadMinas();
         loadBlocks();
     }
@@ -56,25 +58,18 @@ public class Manager {
 
             Material material = Material.getMaterial(Main.config().getString("blocks." + key + ".material"));
             int xp = Main.config().getInt("blocks." + key + ".xp");
-            double money = Main.config().getDouble("blocks." + key + ".money");
 
             if(material == null || !material.isBlock()) {
                 Main.getInstance().getLogger().warning("O material " + material + " não é valido");
                 continue;
             }
 
-            blocks.putIfAbsent(material, new Pair<>(xp, money));
+            blocks.putIfAbsent(material, xp);
         }
     }
 
     public static int getXpBlock(Block block) {
-        Pair<Integer, Double> defaultValue = new Pair<>(0, 0.0);
-        return blocks.getOrDefault(block.getType(), defaultValue).getKey();
-    }
-
-    public static double getMoneyBlock(Block block) {
-        Pair<Integer, Double> defaultValue = new Pair<>(0, 0.0);
-        return blocks.getOrDefault(block.getType(), defaultValue).getValue();
+        return blocks.getOrDefault(block.getType(), 0);
     }
 
     private static void registerCustomEnchantment(Enchantment enchantment) {
@@ -123,5 +118,9 @@ public class Manager {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static Set<CustomEnchant> getEnchants() {
+        return enchants;
     }
 }
