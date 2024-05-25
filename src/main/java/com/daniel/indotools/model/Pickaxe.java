@@ -289,6 +289,7 @@ public class Pickaxe implements Serializable {
         updateNBT(itemStack);
     }
 
+
     private void updateNBT(ItemStack itemStack) {
         NBTItem nbtItem = new NBTItem(itemStack);
         nbtItem.setInteger("custompickaxexp", xp);

@@ -2,11 +2,13 @@ package com.daniel.indotools;
 
 import com.daniel.indotools.commands.PickaxeCommand;
 import com.daniel.indotools.commands.TesouroCommand;
+import com.daniel.indotools.commands.TradeCommand;
 import com.daniel.indotools.handler.Manager;
 import com.daniel.indotools.handler.PickaxeHandler;
 import com.daniel.indotools.handler.TreasureHandler;
 import com.daniel.indotools.hook.EconomyHook;
 import com.daniel.indotools.listeners.Listeners;
+import com.daniel.indotools.model.Trade;
 import com.daniel.indotools.storage.Cache;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -41,6 +43,7 @@ public class Main extends JavaPlugin {
 
         getCommand("picareta").setExecutor(new PickaxeCommand());
         getCommand("itemtesouro").setExecutor(new TesouroCommand());
+        getCommand("trocarpicareta").setExecutor(new TradeCommand());
     }
 
     public static FileConfiguration config() {

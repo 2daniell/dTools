@@ -99,7 +99,8 @@ public class PickaxeInventory extends Menu {
         inventory.setItem(25,vidrociano);
     }
 
-    private void fill(Inventory inventory) {
+    @Override
+    public void fill(Inventory inventory) {
         int slots = 0;
         for (ItemStack items : inventory.getContents()) {
             if (items != null && items.getType() != Material.AIR) continue;

@@ -5,6 +5,7 @@ import com.daniel.indotools.handler.Manager;
 import com.daniel.indotools.handler.PickaxeHandler;
 import com.daniel.indotools.menu.Menu;
 import com.daniel.indotools.model.Pickaxe;
+import com.daniel.indotools.model.Trade;
 import de.tr7zw.changeme.nbtapi.NBTItem;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -131,7 +132,7 @@ public class Listeners implements Listener {
 
     @EventHandler
     public void swap(InventoryClickEvent e) {
-        if (e.getInventory().getHolder() instanceof Menu) return;
+        if (e.getInventory().getHolder() instanceof Trade) return;
 
         InventoryType type = e.getInventory().getType();
 
