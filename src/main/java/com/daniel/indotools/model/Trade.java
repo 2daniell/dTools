@@ -1,161 +1,88 @@
 package com.daniel.indotools.model;
 
-import com.daniel.indotools.Main;
 import com.daniel.indotools.api.ItemBuilder;
+import com.daniel.indotools.hook.EconomyHook;
+import com.daniel.indotools.menu.Menu;
 import de.tr7zw.changeme.nbtapi.NBTItem;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.Sound;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.HandlerList;
-import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+public class Trade extends Menu {
 
-@Getter
-@NoArgsConstructor
-public class Trade implements InventoryHolder, Listener {
+    private final Player sender;
+    private final ItemStack pickaxe;
+    private final double value;
 
-    private enum TradeStatus {
-
-        WAITING, SELECTING, FINISHING;
-
+    public Trade(Player player, Player sender, ItemStack pickaxe, double value) {
+        super(player, "Trade", 3*9);
+        this.sender = sender;
+        this.pickaxe = pickaxe;
+        this.value = value;
     }
 
-    @Setter
-    private Player target;
-    private Player player;
-
-    private Inventory inventory;
-    private Map<Player, ItemStack> tradeItems;
-
-    private TradeStatus status;
-    private Map<Player, Boolean> readyStatus;
-    private List<Player> moneyOption;
-
-    public Trade(Player player) {
-        this.player = player;
-        this.inventory = Bukkit.createInventory(this, 3*9, "Trade");
-        this.status = TradeStatus.WAITING;
-    }
-
-    @EventHandler
+    @Override
     public void onClick(InventoryClickEvent e) {
-        if (!(e.getInventory().getHolder() instanceof Trade)) return;
+        ItemStack clicked = e.getCurrentItem();
+        if (clicked == null || !clicked.hasItemMeta() || !clicked.getItemMeta().hasDisplayName()) return;
 
-        Trade trade = (Trade) e.getInventory().getHolder();
+        String name = ChatColor.stripColor(clicked.getItemMeta().getDisplayName());
 
-        if (!(trade == this)) return;
-        e.setCancelled(true);
+        if (name.equalsIgnoreCase("Recusar")) {
+            sender.sendMessage("§cO jogador recusou sua solicitação.");
+            player.closeInventory();
+        } else if (name.equalsIgnoreCase("Aceitar")) {
+            boolean hasItem = false;
 
-        Player clicker = (Player) e.getWhoClicked();
-
-        ItemStack item = e.getCurrentItem();
-
-        if (item == null || item.getType() == Material.AIR) return;
-
-        if (e.getClickedInventory().getType() != InventoryType.PLAYER) {
-
-            if (e.getSlot() == 14 || e.getSlot() == 12) {
-
-                if (e.getSlot() == 14 && clicker.equals(player)) return;
-                if (e.getSlot() == 12 && clicker.equals(target)) return;
-
-                if (tradeItems.containsKey(clicker)) {
-                    e.getInventory().getItem((clicker.equals(player)) ? 12 : 14).setDurability((short) (readyStatus.get(clicker) ? 14 : 13));
-                    readyStatus.replace(clicker, !readyStatus.get(clicker));
-                } else {
-                    clicker.sendMessage("§cVoçê precisar ter escolhido money ou ter oferecido uma picareta");
-                    return;
+            for (ItemStack item : sender.getInventory().getContents()) {
+                if (item == null || item.getType() == Material.AIR) continue;
+                NBTItem nbt = new NBTItem(item);
+                if (nbt.hasTag("custompickaxeid")) {
+                    hasItem = true;
+                    break;
                 }
-
-                if (allReady()) {
-                    System.out.println("PRONTINHO MANE");
-                    return;
-                }
-
             }
-        }
+            if (hasItem) {
 
-        NBTItem nbtItem = new NBTItem(item);
-        if (!nbtItem.hasTag("custompickaxeid")) return;
+                if (EconomyHook.getBalanceOf(player) >= value) {
+                    player.closeInventory();
+                    player.getInventory().addItem(pickaxe);
+                    sender.getInventory().removeItem(pickaxe);
 
-        if (e.getClickedInventory().getType() == InventoryType.PLAYER) {
-            if (clicker.equals(player) || clicker.equals(target)) {
+                    EconomyHook.removeCoins(player, value);
 
+                    sender.sendMessage("§aTroca realizada!");
+                    player.sendMessage("§aTroca realizada!");
 
-
-                if (!moneyOption.contains(clicker)) {
-
-                    int toSlot = (clicker.equals(player)) ? 10 : 16;
-
-                    if (e.getInventory().getItem(toSlot) != null && e.getInventory().getItem(toSlot).getType() != Material.AIR) {
-
-                        ItemStack toInventory = e.getInventory().getItem(toSlot);
-                        e.getInventory().remove(toInventory);
-                        clicker.getInventory().addItem(toInventory);
-                        tradeItems.remove(clicker);
-                    }
-
-                    e.getInventory().setItem(toSlot, item);
-                    clicker.getInventory().remove(item);
-                    tradeItems.put(clicker, item);
-                    clicker.playSound(clicker.getLocation(), Sound.CLICK, 1f, 1f);
                 } else {
-                    clicker.sendMessage("§cOpção de money ja escolhida.");
+                    player.sendMessage("§cVocê nao tem money suficiente, cancelando.");
+                    sender.sendMessage("§f" + player.getName() + " §cnão tem money suficiente, cancelando.");
+                    player.closeInventory();
+
                 }
+
+            } else {
+                player.closeInventory();
+                player.sendMessage("§cCancelado. O jogador solicitando não possui a picareta no inventário no momento.");
+
+                sender.sendMessage("§cCancelado. Você não possui a picareta no seu inventário.");
             }
         }
     }
 
+    @Override
     public void setItens(Inventory inventory) {
 
-        ItemStack done = new ItemBuilder(Material.STAINED_CLAY, (short) 14).setDisplayName("§f ").build();
-
         fill(inventory);
-        inventory.setItem(12, done);
-        inventory.setItem(14, done);
-
-    }
-
-
-    public void start() {
-        if (target == null) return;
-        Bukkit.getPluginManager().registerEvents(this, Main.getInstance());
-
-        this.status = TradeStatus.SELECTING;
-        this.readyStatus = new HashMap<>();
-        this.tradeItems = new HashMap<>();
-        this.moneyOption = new ArrayList<>();
-
-        this.readyStatus.put(player, false);
-        this.readyStatus.put(target, false);
-
-        player.openInventory(getInventory());
-        target.openInventory(getInventory());
-    }
-
-    public void reset() {
-        this.status = TradeStatus.WAITING;
-
-        tradeItems.clear();
-        readyStatus.clear();
-
-        HandlerList.unregisterAll(this);
-
+        inventory.setItem(13, pickaxe);
+        inventory.setItem(4, new ItemBuilder(Material.NETHER_STAR).setDisplayName("§eInformações").setLore("§7Autor: §f" + sender.getName()
+        , "§7Preço: §aR$" + value).build());
+        inventory.setItem(10, new ItemBuilder(Material.WOOL, (short)13).setDisplayName("§eAceitar").build());
+        inventory.setItem(16, new ItemBuilder(Material.WOOL, (short) 14).setDisplayName("§eRecusar").build());
     }
 
     protected void fill(Inventory inventory) {
@@ -184,19 +111,10 @@ public class Trade implements InventoryHolder, Listener {
 
             if (isCyan) {
                 inventory.setItem(i, cyan);
-            } else if (i != 10 && i != 16) {
+            } else {
                 inventory.setItem(i, black);
             }
         }
     }
 
-    private boolean allReady() {
-        return !readyStatus.containsValue(false);
-    }
-
-    @Override
-    public Inventory getInventory() {
-        setItens(inventory);
-        return inventory;
-    }
 }

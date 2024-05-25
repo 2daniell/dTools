@@ -132,7 +132,7 @@ public class Listeners implements Listener {
 
     @EventHandler
     public void swap(InventoryClickEvent e) {
-        if (e.getInventory().getHolder() instanceof Trade) return;
+        if (e.getInventory().getHolder() instanceof Menu) return;
 
         InventoryType type = e.getInventory().getType();
 

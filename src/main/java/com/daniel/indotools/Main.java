@@ -29,6 +29,7 @@ public class Main extends JavaPlugin {
         Cache.createTable();
 
         TreasureHandler.load();
+        TradeCommand.loadPrices();
 
         Bukkit.getScheduler().runTask(this, Manager::register);
     }

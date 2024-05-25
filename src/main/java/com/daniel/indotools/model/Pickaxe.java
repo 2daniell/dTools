@@ -3,16 +3,15 @@ package com.daniel.indotools.model;
 import com.daniel.indotools.Main;
 import com.daniel.indotools.api.ItemBuilder;
 import com.daniel.indotools.handler.Manager;
-import com.daniel.indotools.utils.Utils;
 import de.tr7zw.changeme.nbtapi.NBTItem;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.enchantments.EnchantmentTarget;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -25,18 +24,19 @@ public class Pickaxe implements Serializable {
 
     @Getter
     @AllArgsConstructor
-    private enum PickaxeType {
+    public enum PickaxeType {
 
-        WOOD(0, Material.WOOD_PICKAXE, "&fPicareta &8[&7Tier &lI&8]"),
-        GOLD(1, Material.GOLD_PICKAXE, "&fPicareta &8[&eTier &lII&8]"),
-        STONE(2, Material.STONE_PICKAXE, "&9Picareta &8[&fTier &9&lIII&8]"),
-        IRON(3, Material.IRON_PICKAXE, "&3Picareta &8[&fTier &3&lIV&8]"),
-        DIAMOND(4, Material.DIAMOND_PICKAXE, "&ePicareta &8[&6Tier &lV&8]");
+        WOOD(0, Material.WOOD_PICKAXE, "&fPicareta &8[&7Tier &lI&8]", "pickaxe.tier1"),
+        GOLD(1, Material.GOLD_PICKAXE, "&fPicareta &8[&eTier &lII&8]", "pickaxe.tier2"),
+        STONE(2, Material.STONE_PICKAXE, "&9Picareta &8[&fTier &9&lIII&8]", "pickaxe.tier3"),
+        IRON(3, Material.IRON_PICKAXE, "&3Picareta &8[&fTier &3&lIV&8]", "pickaxe.tier4"),
+        DIAMOND(4, Material.DIAMOND_PICKAXE, "&ePicareta &8[&6Tier &lV&8]", "pickaxe.tier5");
 
 
         private int tier;
         private final Material material;
         private final String displayName;
+        private final String permission;
 
         public static Material getMaterialByTier(int tier) {
             for (PickaxeType type : values()) {
@@ -214,7 +214,7 @@ public class Pickaxe implements Serializable {
         }
     }
 
-    private int getTier() {
+    public int getTier() {
         return (level / UP_TIER);
     }
 
@@ -289,6 +289,9 @@ public class Pickaxe implements Serializable {
         updateNBT(itemStack);
     }
 
+    public boolean hasPermission(Player player) {
+        return player.hasPermission(type.getPermission());
+    }
 
     private void updateNBT(ItemStack itemStack) {
         NBTItem nbtItem = new NBTItem(itemStack);
