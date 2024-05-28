@@ -39,6 +39,10 @@ public class Manager {
         });
     }
 
+    public static CustomEnchant findEnchantByName(String name) {
+        return enchants.stream().filter(e -> e.getName().equalsIgnoreCase(name)).findFirst().orElse(null);
+    }
+
     public static void unRegister() {
         enchants.forEach(Manager::unregisterCustomEnchantment);
     }

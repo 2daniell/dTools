@@ -12,7 +12,10 @@ import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockEvent;
 import org.bukkit.event.block.BlockExpEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.EnchantmentStorageMeta;
+import org.bukkit.inventory.meta.ItemMeta;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -97,5 +100,16 @@ public class DoubleDrop extends CustomEnchant {
             nbtItem.applyNBT(itemStack);
             return chance;
         }
+    }
+
+    @Override
+    public ItemStack getBook() {
+        ItemStack book = new ItemStack(Material.ENCHANTED_BOOK);
+        EnchantmentStorageMeta meta = (EnchantmentStorageMeta) book.getItemMeta();
+        meta.setDisplayName("      &7-== &bEncantamentos Customizados &7==-");
+        meta.setLore(Arrays.asList("","&b2X DROP"));
+        meta.addStoredEnchant(this, 1, true);
+        book.setItemMeta(meta);
+        return book;
     }
 }

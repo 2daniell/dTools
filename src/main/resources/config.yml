@@ -7,6 +7,14 @@
 #         \/      \/                                    \/ #
 #                                                          #
 
+mysql:
+  use: false #Caso desativado sera salvo os dados no SQLite(localmente)
+  username: 'root'
+  host: 'localhost'
+  database: plugin
+  password: 'root123'
+  port: 3306
+
 mina-worlds:
   - 'world'
 
@@ -25,6 +33,8 @@ blocks:
     xp: 20
 
 config:
+
+  only-diamond: true #Encantar com encantamentos customizados com livro, apenas picaretas de diamand(ultimo tier)
 
   #Caso ativado, o jogador não perde a picareta ao morrer
   keep-item: true
@@ -50,6 +60,8 @@ config:
 
   #Nivel maximo dos encantamentos.
   max-level-enchants: 10
+
+  silk-max-chance: 20
 
 tier:
   1:

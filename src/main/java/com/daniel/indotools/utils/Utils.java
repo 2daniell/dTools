@@ -1,9 +1,12 @@
 package com.daniel.indotools.utils;
 
+import com.daniel.indotools.api.ItemBuilder;
 import com.google.gson.Gson;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.io.BukkitObjectInputStream;
 import org.bukkit.util.io.BukkitObjectOutputStream;
@@ -11,6 +14,7 @@ import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.Arrays;
 import java.util.Map;
 
 public final class Utils {
@@ -45,6 +49,14 @@ public final class Utils {
         } catch (Exception ignored) {
             return new ItemStack[0];
         }
+    }
+
+    public static ItemStack getSilk() {
+        ItemStack book = new ItemStack(Material.ENCHANTED_BOOK);
+        EnchantmentStorageMeta meta = (EnchantmentStorageMeta) book.getItemMeta();
+        meta.addStoredEnchant(Enchantment.SILK_TOUCH, 1, true);
+        book.setItemMeta(meta);
+        return book;
     }
 
 }

@@ -1,21 +1,15 @@
 package com.daniel.indotools;
 
-import com.daniel.indotools.commands.PickaxeCommand;
-import com.daniel.indotools.commands.TesouroCommand;
-import com.daniel.indotools.commands.TradeCommand;
+import com.daniel.indotools.commands.*;
 import com.daniel.indotools.handler.Manager;
-import com.daniel.indotools.handler.PickaxeHandler;
+import com.daniel.indotools.handler.SkinHandler;
 import com.daniel.indotools.handler.TreasureHandler;
 import com.daniel.indotools.hook.EconomyHook;
 import com.daniel.indotools.listeners.Listeners;
-import com.daniel.indotools.model.Trade;
 import com.daniel.indotools.storage.Cache;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class Main extends JavaPlugin {
 
@@ -27,6 +21,8 @@ public class Main extends JavaPlugin {
 
         EconomyHook.setupEconomy();
         Cache.createTable();
+        SkinHandler.createTable();
+        SkinHandler.load();
 
         TreasureHandler.load();
         TradeCommand.loadPrices();
@@ -45,6 +41,8 @@ public class Main extends JavaPlugin {
         getCommand("picareta").setExecutor(new PickaxeCommand());
         getCommand("itemtesouro").setExecutor(new TesouroCommand());
         getCommand("trocarpicareta").setExecutor(new TradeCommand());
+        getCommand("setskin").setExecutor(new SkinCommand());
+        getCommand("giveskin").setExecutor(new SkinItemCommand());
     }
 
     public static FileConfiguration config() {

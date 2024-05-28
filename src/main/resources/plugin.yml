@@ -6,3 +6,5 @@ commands:
   picareta:
   itemtesouro:
   trocarpicareta:
+  setskin:
+  giveskin:

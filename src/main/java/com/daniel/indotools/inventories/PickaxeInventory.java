@@ -49,13 +49,14 @@ public class PickaxeInventory extends Menu {
 
                         if (item == null || item.getType() == Material.AIR) continue;
 
-                        NBTItem nbtItem = new NBTItem(item);
-                        nbtItem.hasTag("custompickaxeid");
-
-                        player.closeInventory();
-                        player.sendMessage("§cVocê só pode usar uma picareta por vez.");
-                        return;
-
+                        if (item.getType().name().endsWith("_PICKAXE")) {
+                            NBTItem nbtItem = new NBTItem(item);
+                            if (nbtItem.hasTag("custompickaxeid")) {
+                                player.closeInventory();
+                                player.sendMessage("§cVocê só pode usar uma picareta por vez.");
+                                return;
+                            }
+                        }
                     }
                     Pickaxe pickaxe = new Pickaxe();
                     PickaxeHandler.getPickaxes().add(pickaxe);
@@ -76,6 +77,9 @@ public class PickaxeInventory extends Menu {
         if (name.equalsIgnoreCase("Fechar")) {
             player.closeInventory();
         }
+        if (name.equalsIgnoreCase("        -== Skins ==-")) {
+            player.openInventory(new SkinsInventory(player).getInventory());
+        }
 
     }
 
@@ -85,10 +89,12 @@ public class PickaxeInventory extends Menu {
         ItemStack pickaxe = new ItemBuilder(Material.WOOD_PICKAXE).setName("§fComprar Picareta").setLore("","§7Custo: §a$ §f" + PRICE,"", "§7Click Aqui para pegar uma picareta").addItemFlag(ItemFlag.HIDE_ATTRIBUTES).build();
         ItemStack info = new ItemBuilder(Material.NETHER_STAR).setName("§fInformações").addItemFlag(ItemFlag.HIDE_ATTRIBUTES).build();
         ItemStack vidrociano = new ItemBuilder(Material.STAINED_GLASS_PANE,(short) 9).addFlags(ItemFlag.HIDE_ATTRIBUTES).setName("&f ").build();
+        ItemStack armazem = new ItemBuilder(Material.CHEST).setName("        &7-== &fSkins &7==-").setLore("","&7Clique aqui para acessar","&7suas skins de ferramentas!").build();
 
         fill(inventory);
         inventory.setItem(22,X);
         inventory.setItem(11,pickaxe);
+        inventory.setItem(15, armazem);
 
         inventory.setItem(4,info);
         inventory.setItem(1,vidrociano);

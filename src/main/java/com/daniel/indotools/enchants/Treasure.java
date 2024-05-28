@@ -12,7 +12,9 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExpEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 
+import java.util.Arrays;
 import java.util.Random;
 
 public class Treasure extends CustomEnchant {
@@ -66,6 +68,18 @@ public class Treasure extends CustomEnchant {
             return chance;
         }
     }
+
+    @Override
+    public ItemStack getBook() {
+        ItemStack book = new ItemStack(Material.ENCHANTED_BOOK);
+        EnchantmentStorageMeta meta = (EnchantmentStorageMeta) book.getItemMeta();
+        meta.setDisplayName("      &7-== &bEncantamentos Customizados &7==-");
+        meta.setLore(Arrays.asList("","&bTESOURO"));
+        meta.addStoredEnchant(this, 1, true);
+        book.setItemMeta(meta);
+        return book;
+    }
+
 
     @Override
     protected int getEnchantmentLevel(BlockExpEvent event) {

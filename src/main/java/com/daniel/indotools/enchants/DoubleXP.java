@@ -14,7 +14,9 @@ import org.bukkit.enchantments.EnchantmentTarget;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExpEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.util.UUID;
 
@@ -52,7 +54,7 @@ public class DoubleXP extends CustomEnchant {
 
                 int xpToAdd = (Manager.getXpBlock(originalBlock));
 
-                pickaxe.addXp(xpToAdd);
+                pickaxe.addXp(xpToAdd, inHand);
 
 
                 if (Main.config().getBoolean("enchants.xp.send-message")) {
@@ -76,6 +78,18 @@ public class DoubleXP extends CustomEnchant {
             return chance;
         }
     }
+
+    @Override
+    public ItemStack getBook() {
+        ItemStack book = new ItemStack(Material.ENCHANTED_BOOK);
+        EnchantmentStorageMeta meta = (EnchantmentStorageMeta) book.getItemMeta();
+        meta.setDisplayName("      &7-== &bEncantamentos Customizados &7==-");
+        meta.setLore(Arrays.asList("","&b2X XP"));
+        meta.addStoredEnchant(this, 1, true);
+        book.setItemMeta(meta);
+        return book;
+    }
+
 
     @Override
     protected int getEnchantmentLevel(BlockExpEvent event) {

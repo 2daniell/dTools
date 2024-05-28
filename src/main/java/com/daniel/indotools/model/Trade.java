@@ -7,10 +7,14 @@ import de.tr7zw.changeme.nbtapi.NBTItem;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
+
+import java.text.DecimalFormat;
 
 public class Trade extends Menu {
 
@@ -54,6 +58,7 @@ public class Trade extends Menu {
                     sender.getInventory().removeItem(pickaxe);
 
                     EconomyHook.removeCoins(player, value);
+                    EconomyHook.depositCoins(sender, value);
 
                     sender.sendMessage("§aTroca realizada!");
                     player.sendMessage("§aTroca realizada!");
@@ -80,7 +85,7 @@ public class Trade extends Menu {
         fill(inventory);
         inventory.setItem(13, pickaxe);
         inventory.setItem(4, new ItemBuilder(Material.NETHER_STAR).setDisplayName("§eInformações").setLore("§7Autor: §f" + sender.getName()
-        , "§7Preço: §aR$" + value).build());
+        , "§7Preço: §aR$" + formatDouble(value)).build());
         inventory.setItem(10, new ItemBuilder(Material.WOOL, (short)13).setDisplayName("§eAceitar").build());
         inventory.setItem(16, new ItemBuilder(Material.WOOL, (short) 14).setDisplayName("§eRecusar").build());
     }
@@ -115,6 +120,11 @@ public class Trade extends Menu {
                 inventory.setItem(i, black);
             }
         }
+    }
+
+    public static String formatDouble(double number) {
+        DecimalFormat decimalFormat = new DecimalFormat("#,##0.######");
+        return decimalFormat.format(number);
     }
 
 }

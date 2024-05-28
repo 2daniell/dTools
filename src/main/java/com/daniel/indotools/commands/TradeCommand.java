@@ -2,10 +2,12 @@ package com.daniel.indotools.commands;
 
 import com.daniel.indotools.Main;
 import com.daniel.indotools.handler.PickaxeHandler;
+import com.daniel.indotools.handler.SkinHandler;
 import com.daniel.indotools.model.Pickaxe;
 import com.daniel.indotools.model.Trade;
 import com.daniel.indotools.objects.Pair;
 import com.daniel.indotools.objects.Triple;
+import com.daniel.indotools.objects.enums.SkinType;
 import de.tr7zw.changeme.nbtapi.NBTItem;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -84,7 +86,6 @@ public class TradeCommand implements CommandExecutor {
 
                 player.openInventory(new Trade(player, senderTrade, pickaxe, price).getInventory());
                 trade.remove(player.getUniqueId());
-                senderTrade.sendMessage("§aO jogador está analisando sua solicitação...");
 
             } else {
                 player.sendMessage("§cVocê não possui solicitaçoes pendentes");
@@ -125,13 +126,16 @@ public class TradeCommand implements CommandExecutor {
             UUID id = UUID.fromString(nbtItem.getString("custompickaxeid"));
             int xp = nbtItem.getInteger("custompickaxexp");
             int level = nbtItem.getInteger("custompickaxelevel");
+            SkinType type = SkinType.getSkinByLore(inHand.getItemMeta().getLore());
 
-            Pickaxe pic = new Pickaxe(id, level, xp);
+            Pickaxe pic = new Pickaxe(id, level, xp, type);
             pic.setEnchantments(new HashMap<>(inHand.getEnchantments()));
 
             PickaxeHandler.getPickaxes().add(pic);
             pickaxe = PickaxeHandler.findPickaxeById(UUID.fromString(nbtItem.getString("custompickaxeid")));
         }
+
+        pickaxe.setSkin(SkinType.DEFAULT, inHand);
 
         if (!pickaxe.hasPermission(target)) {
             player.sendMessage("§cO jogador não possui permissão para possuir esse tier");
@@ -164,11 +168,11 @@ public class TradeCommand implements CommandExecutor {
         player.sendMessage("§aSolicitação enviada para §f" + target.getName() + " §a, ele tem 30 segundos para aceitar.");
 
         Bukkit.getScheduler().runTaskLaterAsynchronously(Main.getInstance(), () -> {
-            trade.remove(target.getUniqueId());
             new BukkitRunnable() {
                 @Override
                 public void run() {
                     if (trade.containsKey(target.getUniqueId())) {
+                        trade.remove(target.getUniqueId());
                         player.sendMessage("§cTempo de solicitação expirado");
                         target.sendMessage("§cTempo de solicitação expirado");
                     }

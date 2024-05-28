@@ -2,18 +2,14 @@ package com.daniel.indotools.storage;
 
 import com.daniel.indotools.Main;
 import com.daniel.indotools.utils.Utils;
-import com.google.gson.Gson;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.io.File;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 public class Cache {
 

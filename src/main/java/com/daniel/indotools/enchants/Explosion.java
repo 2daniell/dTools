@@ -13,8 +13,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExpEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 public class Explosion extends CustomEnchant {
 
@@ -22,7 +26,7 @@ public class Explosion extends CustomEnchant {
     private static final String CHANCE_TAG = "enchantment_explosion";
 
     public Explosion() {
-        super("Explosão" , 1235, 1, 1);
+        super("Explosao" , 1235, 1, 1);
 
         add(BlockBreakEvent.class, this::onBreak);
     }
@@ -54,13 +58,18 @@ public class Explosion extends CustomEnchant {
                             if (blockType.equals(Material.AIR) || blockType.equals(Material.BEDROCK)) continue;
                             if (!blockType.equals(originalType)) continue;
 
-                            block.breakNaturally();
+                            block.setType(Material.AIR);
 
                             blocksBroken++;
 
                         }
                     }
                 }
+
+                int finalBlocksBroken = blocksBroken;
+                List<ItemStack> drops = e.getBlock().getDrops().stream().peek(drop -> drop.setAmount(drop.getAmount() * finalBlocksBroken)).collect(Collectors.toList());
+                player.getInventory().addItem(drops.toArray(new ItemStack[0]));
+
                 player.playSound(player.getLocation(), Sound.EXPLODE, 2f, 2f);
 
                 if (Main.config().getBoolean("enchants.explosion.send-message")) {
@@ -71,6 +80,19 @@ public class Explosion extends CustomEnchant {
             }
         }
     }
+
+    @Override
+    public ItemStack getBook() {
+        ItemStack book = new ItemStack(Material.ENCHANTED_BOOK);
+        EnchantmentStorageMeta meta = (EnchantmentStorageMeta) book.getItemMeta();
+        meta.setDisplayName("      &7-== &bEncantamentos Customizados &7==-");
+        meta.addStoredEnchant(this, 1, true);
+        meta.setLore(Arrays.asList("","&bEXPLOSIVE"));
+        book.setItemMeta(meta);
+        return book;
+    }
+
+
 
     public int getChance(ItemStack itemStack) {
         NBTItem nbtItem = new NBTItem(itemStack);
